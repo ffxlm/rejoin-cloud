@@ -4,266 +4,247 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08090a">
 <title>Rejoin — ระบบกู้เกมอัตโนมัติ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
   :root{
-    --bg:#080d17; --bg-2:#0b1220; --card:#111a2b; --card-2:#0e1626; --card-3:#16213a;
-    --line:#22304a; --line-2:#1a2438;
-    --txt:#eaf0f8; --muted:#93a2bb; --dim:#64748b;
-    --accent:#4f8cff; --accent-2:#22d3a6;
-    --green:#34d399; --amber:#fbbf24; --red:#f87171; --blue:#60a5fa; --slate:#94a3b8;
-    --radius:18px;
+    --bg:#08090a; --bg-2:#0f1011; --bg-3:#141516; --elev:#16171a;
+    --hover:rgba(255,255,255,.045); --hover-2:rgba(255,255,255,.075);
+    --border:#23252a; --border-2:#2c2e33; --border-3:#3c3f44;
+    --text:#f7f8f8; --text-2:#d0d6e0; --muted:#8a8f98; --dim:#62666d;
+    --accent:#5e6ad2; --accent-h:#6e79dd;
+    --green:#4cb782; --amber:#f2c94c; --red:#eb5757; --blue:#4ea7fc;
   }
-  html,body{height:100%}
+  html{background:var(--bg)}
   body{
-    margin:0; color:var(--txt); min-height:100vh;
-    font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
-    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
-    background:
-      radial-gradient(1100px 520px at 78% -12%, #17233f 0%, transparent 58%),
-      radial-gradient(760px 420px at 4% 4%, #10203a 0%, transparent 52%),
-      var(--bg);
+    margin:0; color:var(--text); font-size:14px; line-height:1.5; letter-spacing:-.006em;
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    background:radial-gradient(720px 240px at 50% -60px, rgba(94,106,210,.10), transparent 70%) no-repeat var(--bg);
     background-attachment:fixed;
   }
   a{color:var(--accent);text-decoration:none}
-  ::selection{background:#2b4a86;color:#fff}
+  ::selection{background:rgba(94,106,210,.4);color:#fff}
 
-  /* ---------- icons ---------- */
-  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round;vertical-align:-.13em;flex:none}
+  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;
+      stroke-linejoin:round;vertical-align:-.14em;flex:none}
   .ic.fill{fill:currentColor;stroke:none}
 
   /* ---------- top bar ---------- */
-  header.topbar{
-    position:sticky; top:0; z-index:30;
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    padding:13px 22px;
-    background:rgba(8,13,23,.82); backdrop-filter:blur(14px);
-    border-bottom:1px solid var(--line-2);
-  }
-  .brand{display:flex;align-items:center;gap:12px;min-width:0}
-  .logo{
-    width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;
-    background:linear-gradient(145deg,#4f8cff,#22d3a6); color:#04121f; font-size:19px;
-    box-shadow:0 8px 22px -10px #4f8cff;
-  }
-  .brand h1{margin:0;font-size:16px;font-weight:800;letter-spacing:-.2px}
-  .brand p{margin:1px 0 0;font-size:11.5px;color:var(--dim)}
-  .top-right{display:flex;align-items:center;gap:10px}
-  .userchip{display:flex;align-items:center;gap:9px;padding:5px 12px 5px 5px;
-            background:var(--card);border:1px solid var(--line);border-radius:999px}
-  .userchip .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
-                font-size:13px;font-weight:800;color:#04121f;
-                background:linear-gradient(145deg,#8ab4ff,#22d3a6)}
-  .userchip span{font-size:13px;font-weight:600;color:var(--muted);max-width:130px;
-                 overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+          gap:14px;height:52px;padding:0 20px;background:rgba(8,9,10,.72);
+          backdrop-filter:blur(12px) saturate(180%);border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .logo{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:#fff;flex:none;
+        background:linear-gradient(135deg,#5e6ad2,#8b7ff0);
+        box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18)}
+  .logo .ic{width:15px;height:15px}
+  .brand b{font-size:14px;font-weight:600;letter-spacing:-.01em}
+  .brand .sub{font-size:12px;color:var(--dim);padding-left:10px;margin-left:2px;border-left:1px solid var(--border-2)}
+  .top-right{display:flex;align-items:center;gap:8px}
+  .uchip{display:flex;align-items:center;gap:8px;height:32px;padding:0 4px}
+  .uchip .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;
+             font-size:11px;font-weight:600;color:#fff;background:linear-gradient(135deg,#5e6ad2,#8b7ff0)}
+  .uchip .nm{font-size:13px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
   /* ---------- layout ---------- */
-  .wrap{max-width:1080px;margin:0 auto;padding:26px 22px 70px}
+  .wrap{max-width:1000px;margin:0 auto;padding:26px 20px 90px}
 
-  /* ---------- stat cards ---------- */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:4px 0 26px}
-  .stat{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--card),var(--card-2));
-        border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px}
-  .stat::after{content:"";position:absolute;inset:0 auto auto 0;height:3px;width:100%;
-               background:linear-gradient(90deg,var(--c),transparent);opacity:.9}
-  .stat .icw{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
-             font-size:17px;margin-bottom:12px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
-  .stat .n{font-size:27px;font-weight:800;line-height:1;letter-spacing:-.5px}
-  .stat .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+  /* ---------- stat strip ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);
+         border-radius:12px;background:var(--bg-2);overflow:hidden;margin-bottom:22px}
+  .stat{padding:15px 18px;border-right:1px solid var(--border)}
+  .stat:last-child{border-right:0}
+  .stat .l{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:9px}
+  .stat .l .ic{width:13px;height:13px;color:var(--dim)}
+  .stat .n{font-size:23px;font-weight:600;letter-spacing:-.02em;line-height:1}
 
-  /* ---------- onboarding ---------- */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
-  .step{display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border-radius:16px;
-        background:var(--card-2);border:1px solid var(--line-2)}
-  .step .num{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;
-             font-size:13px;font-weight:800;background:rgba(79,140,255,.15);color:var(--accent);
-             border:1px solid rgba(79,140,255,.35)}
-  .step b{display:block;font-size:13.5px;margin-bottom:2px}
-  .step span{font-size:12.5px;color:var(--muted);line-height:1.5}
+  /* ---------- steps ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);
+         border-radius:12px;background:var(--bg-2);overflow:hidden;margin-bottom:22px}
+  .step{display:flex;gap:11px;padding:14px 16px;border-right:1px solid var(--border)}
+  .step:last-child{border-right:0}
+  .step .num{width:20px;height:20px;flex:none;border-radius:6px;display:grid;place-items:center;
+             font-size:11px;font-weight:600;color:var(--muted);background:var(--hover);border:1px solid var(--border)}
+  .step b{display:block;font-size:12.5px;font-weight:500;color:var(--text-2);margin-bottom:2px}
+  .step span{font-size:12px;color:var(--dim);line-height:1.45}
 
   /* ---------- section head ---------- */
-  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 16px}
-  .sec-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.2px;
-               display:flex;align-items:center;gap:9px}
-  .sec-head .count{font-size:12px;font-weight:600;color:var(--dim);background:var(--card);
-                   border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+  .sec-head h2{margin:0;font-size:13px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .sec-head h2 .ic{width:15px;height:15px;color:var(--dim)}
+  .count{font-size:11px;font-weight:500;color:var(--dim);background:var(--hover);
+         border:1px solid var(--border);border-radius:6px;padding:1px 6px}
 
   /* ---------- buttons ---------- */
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
-       border:1px solid transparent;border-radius:11px;padding:11px 16px;
-       font:inherit;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;
-       transition:filter .15s,transform .12s,border-color .15s,background .15s}
-  .btn .ic{width:17px;height:17px}
-  .btn:hover{filter:brightness(1.08)}
-  .btn:active{transform:translateY(1px)}
-  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .btn.primary{background:linear-gradient(180deg,#5b93ff,#3f74e0);color:#fff;
-               box-shadow:0 10px 24px -12px #4f8cff}
-  .btn.success{background:linear-gradient(180deg,#2fd6a0,#17b98a);color:#04271d;
-               box-shadow:0 10px 24px -12px #22d3a6}
-  .btn.danger{background:linear-gradient(180deg,#f2686a,#dd4444);color:#fff}
-  .btn.soft{background:var(--card-3);color:var(--txt);border-color:var(--line)}
-  .btn.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
-  .btn.ghost:hover{color:var(--txt);border-color:#3a4b68}
-  .btn.icon{padding:11px}
-  .btn[disabled]{opacity:.5;cursor:not-allowed;filter:none;transform:none}
-  .btn.loading{pointer-events:none;opacity:.7}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;
+       border-radius:8px;border:1px solid transparent;font:inherit;font-size:13px;font-weight:500;
+       cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
+  .btn .ic{width:15px;height:15px}
+  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(94,106,210,.35)}
+  .btn:active{transform:translateY(.5px)}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
+  .btn.primary:hover{background:var(--accent-h)}
+  .btn.default{background:var(--hover);color:var(--text-2);border-color:var(--border)}
+  .btn.default:hover{background:var(--hover-2);color:var(--text);border-color:var(--border-2)}
+  .btn.ghost{background:transparent;color:var(--muted)}
+  .btn.ghost:hover{background:var(--hover);color:var(--text)}
+  .btn.success{background:rgba(76,183,130,.12);color:#5fc99a;border-color:rgba(76,183,130,.28)}
+  .btn.success:hover{background:rgba(76,183,130,.18)}
+  .btn.danger{background:rgba(235,87,87,.1);color:#ef7a7a;border-color:rgba(235,87,87,.26)}
+  .btn.danger:hover{background:rgba(235,87,87,.16)}
+  .btn.icon{width:32px;padding:0}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .btn.loading{pointer-events:none;opacity:.6}
 
   /* ---------- device card ---------- */
-  .device{background:linear-gradient(180deg,var(--card),var(--card-2));
-          border:1px solid var(--line);border-radius:var(--radius);
-          padding:18px 20px;margin-bottom:18px;
-          box-shadow:0 24px 50px -40px #000}
-  .dev-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
-  .dev-name{display:flex;align-items:center;gap:10px;min-width:0}
-  .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--slate)}
-  .dot.armed{background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.15);animation:pulse 2s infinite}
-  .dot.rejoining{background:var(--blue);box-shadow:0 0 0 4px rgba(96,165,250,.15);animation:pulse 1.2s infinite}
-  .dot.alert{background:var(--red);box-shadow:0 0 0 4px rgba(248,113,113,.15)}
-  .dot.lua_active,.dot.game_running{background:var(--amber);box-shadow:0 0 0 4px rgba(251,191,36,.13)}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
-  .dev-name h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.2px;
+  .device{border:1px solid var(--border);border-radius:12px;background:var(--bg-2);
+          margin-bottom:14px;transition:border-color .15s}
+  .device:hover{border-color:var(--border-2)}
+  .dev-body{padding:16px 18px}
+  .dev-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .dev-name{display:flex;align-items:center;gap:9px;min-width:0}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--dim)}
+  .dot.armed{background:var(--green);box-shadow:0 0 0 3px rgba(76,183,130,.15)}
+  .dot.rejoining{background:var(--accent);box-shadow:0 0 0 3px rgba(94,106,210,.18);animation:pulse 1.2s infinite}
+  .dot.alert{background:var(--red);box-shadow:0 0 0 3px rgba(235,87,87,.15)}
+  .dot.lua_active,.dot.game_running{background:var(--amber);box-shadow:0 0 0 3px rgba(242,201,76,.14)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .dev-name h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em;
                overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .dev-id{font-size:12px;font-weight:600;color:var(--dim);background:var(--bg-2);
-          border:1px solid var(--line-2);border-radius:7px;padding:2px 7px}
-  .dev-sub{font-size:12.5px;color:var(--dim);margin-top:7px;display:flex;gap:14px;flex-wrap:wrap}
-  .dev-sub .ic{width:13px;height:13px;vertical-align:-.15em;margin-right:4px}
+  .dev-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);
+          background:var(--hover);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+  .dev-sub{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:6px}
+  .dev-sub .ic{width:12px;height:12px;vertical-align:-.14em;margin-right:4px}
 
-  .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;
-         font-size:13px;font-weight:700;white-space:nowrap;border:1px solid transparent}
-  .badge .ic{width:15px;height:15px}
-  .b-armed{background:rgba(52,211,153,.12);color:var(--green);border-color:rgba(52,211,153,.3)}
-  .b-ready{background:rgba(251,191,36,.12);color:var(--amber);border-color:rgba(251,191,36,.3)}
-  .b-rejoin{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
-  .b-alert{background:rgba(248,113,113,.12);color:var(--red);border-color:rgba(248,113,113,.3)}
-  .b-game{background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.25)}
-  .b-offline{background:rgba(148,163,184,.1);color:var(--slate);border-color:rgba(148,163,184,.22)}
-  .b-conn{background:rgba(79,140,255,.12);color:var(--accent);border-color:rgba(79,140,255,.3)}
+  .badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:7px;
+         font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent}
+  .badge .ic{width:13px;height:13px}
+  .b-armed{color:#5fc99a;background:rgba(76,183,130,.1);border-color:rgba(76,183,130,.22)}
+  .b-ready{color:#e6c356;background:rgba(242,201,76,.1);border-color:rgba(242,201,76,.22)}
+  .b-rejoin{color:#8b93e8;background:rgba(94,106,210,.14);border-color:rgba(94,106,210,.3)}
+  .b-alert{color:#ef7a7a;background:rgba(235,87,87,.1);border-color:rgba(235,87,87,.24)}
+  .b-game{color:#e6c356;background:rgba(242,201,76,.08);border-color:rgba(242,201,76,.2)}
+  .b-offline{color:var(--muted);background:var(--hover);border-color:var(--border)}
+  .b-conn{color:#7fb8f0;background:rgba(78,167,252,.1);border-color:rgba(78,167,252,.22)}
 
-  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
-  .mi{display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:13px;
-      background:var(--bg-2);border:1px solid var(--line-2);min-width:0}
-  .mi .icw{width:32px;height:32px;border-radius:9px;flex:none;display:grid;place-items:center;
-           font-size:16px;background:rgba(79,140,255,.1);color:var(--accent)}
-  .mi .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
-  .mi .v{font-size:14px;font-weight:700;margin-top:1px;overflow:hidden;
-         text-overflow:ellipsis;white-space:nowrap}
-  .mi .v.ok{color:var(--green)} .mi .v.no{color:var(--red)}
+  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:15px 0;
+        margin-top:15px;border-top:1px solid var(--border)}
+  .mi{min-width:0}
+  .mi .k{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:5px;margin-bottom:4px}
+  .mi .k .ic{width:12px;height:12px}
+  .mi .v{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mi .v.ok{color:#5fc99a} .mi .v.no{color:var(--dim)}
 
-  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-           padding-top:16px;border-top:1px solid var(--line-2)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:15px;border-top:1px solid var(--border)}
   .actions .spacer{flex:1}
 
   /* ---------- tabs ---------- */
-  .tabs{display:flex;gap:2px;margin-top:18px;border-bottom:1px solid var(--line-2)}
-  .tab{display:inline-flex;align-items:center;gap:7px;background:none;border:0;
-       border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-weight:700;
-       font-size:13px;padding:10px 14px;cursor:pointer;margin-bottom:-1px}
-  .tab .ic{width:15px;height:15px}
-  .tab:hover{color:var(--txt)}
-  .tab.active{color:var(--txt);border-bottom-color:var(--accent)}
-  .tab .pill{font-size:11px;font-weight:700;color:var(--dim);background:var(--bg-2);
-             border:1px solid var(--line-2);border-radius:999px;padding:0 7px}
-  .pane{padding-top:15px}
+  .tabs{display:flex;gap:2px;margin-top:16px;border-bottom:1px solid var(--border)}
+  .tab{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;background:none;border:0;
+       border-bottom:1.5px solid transparent;color:var(--muted);font:inherit;font-size:12.5px;
+       font-weight:500;cursor:pointer;margin-bottom:-1px}
+  .tab .ic{width:14px;height:14px}
+  .tab:hover{color:var(--text-2)}
+  .tab.active{color:var(--text);border-bottom-color:var(--text)}
+  .tab .pill{font-size:10.5px;color:var(--dim);background:var(--hover);border:1px solid var(--border);border-radius:5px;padding:0 5px}
+  .pane{padding-top:14px}
   .pane[hidden]{display:none}
 
   /* ---------- screenshots ---------- */
-  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-  .shot{position:relative;background:var(--bg-2);border:1px solid var(--line-2);
-        border-radius:13px;overflow:hidden}
+  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .shot{margin:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--bg)}
   .shot a{display:block;line-height:0}
-  .shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#05080f;
-            transition:transform .25s}
-  .shot:hover img{transform:scale(1.04)}
+  .shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;transition:opacity .15s}
+  .shot:hover img{opacity:.88}
   .shot .cap{display:flex;align-items:center;justify-content:space-between;gap:6px;
-             padding:7px 9px;font-size:11px;color:var(--muted)}
-  .shot .del{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;
-             border:1px solid transparent;background:transparent;color:var(--dim);cursor:pointer}
-  .shot .del:hover{color:var(--red);background:rgba(248,113,113,.12)}
-  .shot .del .ic{width:13px;height:13px}
+             padding:6px 8px;font-size:11px;color:var(--dim)}
+  .shot .del{display:grid;place-items:center;width:20px;height:20px;border-radius:5px;
+             border:0;background:transparent;color:var(--dim);cursor:pointer}
+  .shot .del:hover{background:rgba(235,87,87,.12);color:#ef7a7a}
+  .shot .del .ic{width:12px;height:12px}
 
   /* ---------- events ---------- */
-  .evlist{display:flex;flex-direction:column;gap:8px}
-  .ev{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:12px;
-      background:var(--bg-2);border:1px solid var(--line-2)}
-  .evic{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;
-        font-size:15px;background:rgba(148,163,184,.1);color:var(--slate)}
-  .evic .ic{width:16px;height:16px}
-  .ev-rejoin .evic{background:rgba(52,211,153,.12);color:var(--green)}
-  .ev-alert .evic{background:rgba(248,113,113,.12);color:var(--red)}
-  .ev-arm .evic{background:rgba(79,140,255,.12);color:var(--accent)}
-  .ev-disarm .evic{background:rgba(148,163,184,.12);color:var(--slate)}
-  .ev-rejoin_now .evic{background:rgba(251,191,36,.12);color:var(--amber)}
-  .ev-screenshot_now .evic{background:rgba(96,165,250,.12);color:var(--blue)}
-  .evtxt{font-size:13px;font-weight:600;flex:1;min-width:0}
+  .evlist{display:flex;flex-direction:column}
+  .ev{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;transition:background .12s}
+  .ev + .ev{border-top:1px solid var(--border)}
+  .ev:hover{background:var(--hover)}
+  .evic{width:26px;height:26px;flex:none;border-radius:7px;display:grid;place-items:center;
+        color:var(--muted);background:var(--hover)}
+  .evic .ic{width:14px;height:14px}
+  .ev-rejoin .evic{color:#5fc99a;background:rgba(76,183,130,.1)}
+  .ev-alert .evic{color:#ef7a7a;background:rgba(235,87,87,.1)}
+  .ev-arm .evic{color:#8b93e8;background:rgba(94,106,210,.12)}
+  .ev-disarm .evic{color:var(--muted);background:var(--hover)}
+  .ev-rejoin_now .evic{color:#e6c356;background:rgba(242,201,76,.1)}
+  .ev-screenshot_now .evic{color:#7fb8f0;background:rgba(78,167,252,.1)}
+  .evtxt{flex:1;min-width:0;font-size:13px;color:var(--text-2)}
   .evtime{font-size:11.5px;color:var(--dim);white-space:nowrap}
 
-  .none{display:flex;flex-direction:column;align-items:center;gap:8px;
-        font-size:13px;color:var(--dim);background:var(--bg-2);
-        border:1px dashed var(--line);border-radius:13px;padding:26px 16px;text-align:center}
-  .none .ic{width:22px;height:22px;color:var(--line)}
+  .none{display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px 16px;text-align:center;
+        font-size:12.5px;color:var(--dim);border:1px dashed var(--border-2);border-radius:9px}
+  .none .ic{width:20px;height:20px;color:var(--border-3)}
 
-  /* ---------- empty state ---------- */
+  /* ---------- empty ---------- */
   .empty{display:flex;flex-direction:column;align-items:center;text-align:center;
-         padding:56px 22px;background:var(--card-2);border:1px dashed var(--line);
-         border-radius:var(--radius)}
-  .empty .big{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;
-              font-size:30px;color:var(--accent);background:rgba(79,140,255,.1);
-              border:1px solid rgba(79,140,255,.25);margin-bottom:16px}
-  .empty h2{margin:0 0 6px;font-size:18px;color:var(--txt)}
-  .empty p{margin:0 0 20px;font-size:13.5px;color:var(--muted);max-width:380px}
+         padding:56px 20px;border:1px dashed var(--border-2);border-radius:12px}
+  .empty .big{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:var(--muted);
+              background:var(--hover);border:1px solid var(--border);margin-bottom:14px}
+  .empty h2{margin:0 0 5px;font-size:15px;font-weight:600}
+  .empty p{margin:0 0 18px;font-size:13px;color:var(--muted);max-width:360px}
 
   /* ---------- modal ---------- */
   .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
-         padding:20px;background:rgba(4,8,15,.66);backdrop-filter:blur(4px)}
-  .modal.open{display:flex;animation:fade .15s ease}
+         padding:20px;background:rgba(3,4,5,.6);backdrop-filter:blur(3px)}
+  .modal.open{display:flex;animation:fade .14s ease}
   @keyframes fade{from{opacity:0}to{opacity:1}}
-  .modal-card{width:100%;max-width:430px;background:linear-gradient(180deg,var(--card),var(--card-2));
-              border:1px solid var(--line);border-radius:20px;padding:26px;
-              box-shadow:0 40px 90px -40px #000;animation:pop .18s ease}
-  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
-  .modal-card h3{margin:0 0 6px;font-size:18px;font-weight:800}
-  .modal-card p{margin:0 0 18px;font-size:13.5px;color:var(--muted);line-height:1.6}
-  .modal-card label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:7px}
-  .modal-ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
-            font-size:25px;margin-bottom:16px}
-  .modal-ic.ok{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.3)}
-  .modal-ic.warn{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
-  .modal-ic .ic{width:26px;height:26px}
-  input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);
-                   border-radius:11px;padding:12px 14px;font-size:15px;font-family:inherit}
-  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,140,255,.18)}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-  .code{display:flex;align-items:center;justify-content:center;gap:10px;
-        font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:22px;font-weight:800;
-        letter-spacing:2px;color:#7ef0c2;background:rgba(34,211,166,.08);
-        border:1px solid rgba(34,211,166,.3);border-radius:14px;padding:18px 14px;
-        margin:4px 0 6px;word-break:break-all;text-align:center}
+  .modal-card{width:100%;max-width:420px;background:var(--elev);border:1px solid var(--border-2);
+              border-radius:12px;padding:22px;box-shadow:0 24px 60px -20px rgba(0,0,0,.75);animation:pop .16s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .modal-card h3{margin:0 0 5px;font-size:15px;font-weight:600}
+  .modal-card p{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.55}
+  .modal-ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;margin-bottom:14px}
+  .modal-ic.ok{color:#5fc99a;background:rgba(76,183,130,.12);border:1px solid rgba(76,183,130,.24)}
+  .modal-ic.warn{color:#ef7a7a;background:rgba(235,87,87,.12);border:1px solid rgba(235,87,87,.24)}
+  .modal-ic .ic{width:20px;height:20px}
+  .modal-card label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px}
+  input[type=text]{width:100%;height:36px;background:var(--bg);border:1px solid var(--border-2);color:var(--text);
+                   border-radius:8px;padding:0 12px;font:inherit;font-size:14px}
+  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(94,106,210,.3)}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:600;letter-spacing:1.5px;
+        color:var(--text);background:var(--bg);border:1px solid var(--border-2);border-radius:9px;
+        padding:16px;text-align:center;word-break:break-all;margin:4px 0 2px}
 
   /* ---------- toast ---------- */
-  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);z-index:80;
-         display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:13px;
-         background:#1b2740;border:1px solid var(--line);color:var(--txt);font-size:13.5px;
-         font-weight:600;box-shadow:0 20px 50px -20px #000;opacity:0;pointer-events:none;
-         transition:opacity .2s,transform .2s;max-width:92vw}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,12px);z-index:80;display:flex;
+         align-items:center;gap:9px;padding:11px 15px;border-radius:9px;background:var(--elev);
+         border:1px solid var(--border-2);color:var(--text);font-size:13px;font-weight:500;
+         box-shadow:0 12px 30px -12px rgba(0,0,0,.75);opacity:0;pointer-events:none;
+         transition:opacity .18s,transform .18s;max-width:92vw}
   .toast.show{opacity:1;transform:translate(-50%,0)}
-  .toast .ic{width:17px;height:17px;color:var(--accent-2)}
+  .toast .ic{width:16px;height:16px;color:var(--green)}
 
   /* ---------- responsive ---------- */
   @media(max-width:820px){
     .stats{grid-template-columns:repeat(2,1fr)}
-    .meta{grid-template-columns:repeat(2,1fr)}
+    .stat:nth-child(2){border-right:0}
+    .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--border)}
+    .meta{grid-template-columns:repeat(2,1fr);gap:14px}
     .steps{grid-template-columns:1fr}
+    .step{border-right:0;border-bottom:1px solid var(--border)}
+    .step:last-child{border-bottom:0}
   }
   @media(max-width:560px){
-    .wrap{padding:18px 14px 60px}
-    header.topbar{padding:11px 14px}
-    .brand p{display:none}
-    .userchip span{display:none}
-    .device{padding:16px}
-    .dev-name h3{font-size:16px}
+    .wrap{padding:18px 14px 70px}
+    .topbar{padding:0 14px}
+    .brand .sub{display:none}
+    .uchip .nm{display:none}
+    .dev-body{padding:14px}
     .actions .btn{flex:1 1 auto}
     .actions .spacer{display:none}
   }
@@ -271,7 +252,6 @@
 </head>
 <body>
 
-<!-- ============ SVG icon sprite (เลิกใช้อีโมจิที่แสดงผลไม่แน่นอน) ============ -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></symbol>
   <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
@@ -296,8 +276,6 @@
   <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
   <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
   <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
-  <symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
-  <symbol id="i-power" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></symbol>
 </defs></svg>
 
 {% macro status_badge(status) -%}
@@ -324,16 +302,14 @@
 
 <header class="topbar">
   <div class="brand">
-    <span class="logo"><svg class="ic" style="width:20px;height:20px;stroke-width:2.4"><use href="#i-refresh"/></svg></span>
-    <div>
-      <h1>Rejoin</h1>
-      <p>ระบบกู้เกมอัตโนมัติ</p>
-    </div>
+    <span class="logo"><svg class="ic" style="width:15px;height:15px;stroke-width:2.4"><use href="#i-refresh"/></svg></span>
+    <b>Rejoin</b>
+    <span class="sub">ระบบกู้เกมอัตโนมัติ</span>
   </div>
   <div class="top-right">
-    <div class="userchip">
+    <div class="uchip">
       <span class="av">{{ (user.username or user.discord_id or '?')[0]|upper }}</span>
-      <span>{{ user.username or user.discord_id }}</span>
+      <span class="nm">{{ user.username or user.discord_id }}</span>
     </div>
     <button class="btn ghost icon" title="ออกจากระบบ" aria-label="ออกจากระบบ" onclick="logout()">
       <svg class="ic"><use href="#i-logout"/></svg>
@@ -345,25 +321,21 @@
 
   <!-- ---------- ภาพรวม ---------- -->
   <section class="stats">
-    <div class="stat" style="--c:#60a5fa">
-      <div class="icw"><svg class="ic"><use href="#i-monitor"/></svg></div>
+    <div class="stat">
+      <div class="l"><svg class="ic"><use href="#i-monitor"/></svg>เครื่องทั้งหมด</div>
       <div class="n" id="statDevices">{{ devices|length }}</div>
-      <div class="l">เครื่องทั้งหมด</div>
     </div>
-    <div class="stat" style="--c:#34d399">
-      <div class="icw"><svg class="ic"><use href="#i-shield"/></svg></div>
+    <div class="stat">
+      <div class="l"><svg class="ic"><use href="#i-shield"/></svg>กำลังเฝ้าเกม</div>
       <div class="n" id="statArmed">{{ armed_count }}</div>
-      <div class="l">กำลังเฝ้าเกม</div>
     </div>
-    <div class="stat" style="--c:#f87171">
-      <div class="icw"><svg class="ic"><use href="#i-alert"/></svg></div>
+    <div class="stat">
+      <div class="l"><svg class="ic"><use href="#i-alert"/></svg>มีปัญหา</div>
       <div class="n" id="statProblem">{{ problem_count }}</div>
-      <div class="l">มีปัญหา</div>
     </div>
-    <div class="stat" style="--c:#22d3a6">
-      <div class="icw"><svg class="ic"><use href="#i-refresh"/></svg></div>
+    <div class="stat">
+      <div class="l"><svg class="ic"><use href="#i-refresh"/></svg>กู้เกมสำเร็จรวม</div>
       <div class="n" id="statRejoins">{{ total_rejoins }}</div>
-      <div class="l">กู้เกมสำเร็จรวม</div>
     </div>
   </section>
 
@@ -384,8 +356,7 @@
   </section>
 
   <div class="sec-head">
-    <h2><svg class="ic" style="width:17px;height:17px;color:var(--accent)"><use href="#i-smartphone"/></svg>
-      เครื่องของฉัน
+    <h2><svg class="ic"><use href="#i-smartphone"/></svg>เครื่องของฉัน
       {% if panels %}<span class="count">{{ panels|length }}</span>{% endif %}
     </h2>
     <button class="btn primary" onclick="openAdd()">
@@ -395,7 +366,7 @@
 
   {% if not panels %}
   <div class="empty">
-    <div class="big"><svg class="ic" style="width:30px;height:30px"><use href="#i-smartphone"/></svg></div>
+    <div class="big"><svg class="ic" style="width:22px;height:22px"><use href="#i-smartphone"/></svg></div>
     <h2>ยังไม่มีเครื่อง</h2>
     <p>เพิ่มเครื่องเพื่อรับรหัส แล้วนำไปกรอกในแอปบนคลาวโฟน ระบบจะเริ่มเฝ้าเกมให้เอง</p>
     <button class="btn primary" onclick="openAdd()">
@@ -406,125 +377,125 @@
 
   {% for d in panels %}
   <section class="device" data-device="{{ d.device_id }}" data-armed="{{ 'true' if d.armed else 'false' }}">
-    <div class="dev-top">
-      <div>
-        <div class="dev-name">
-          <span class="dot {{ d.status }} js-dot"></span>
-          <h3>{{ d.name }}</h3>
-          <span class="dev-id">#{{ d.device_id }}</span>
+    <div class="dev-body">
+      <div class="dev-top">
+        <div>
+          <div class="dev-name">
+            <span class="dot {{ d.status }} js-dot"></span>
+            <h3>{{ d.name }}</h3>
+            <span class="dev-id">#{{ d.device_id }}</span>
+          </div>
+          <div class="dev-sub">
+            <span><svg class="ic"><use href="#i-clock"/></svg>อัปเดตล่าสุด <span class="js-lastseen">{{ d.last_seen_ago or '—' }}</span></span>
+            {% if d.session_start %}<span><svg class="ic"><use href="#i-shield"/></svg>เริ่มเฝ้า <span class="js-session" data-ts="{{ d.session_start }}">{{ d.session_start_ago }}</span></span>{% endif %}
+          </div>
         </div>
-        <div class="dev-sub">
-          <span><svg class="ic"><use href="#i-clock"/></svg>อัปเดตล่าสุด <span class="js-lastseen" data-age="{{ d.last_seen_age_sec if d.last_seen_age_sec is not none else '' }}">{{ d.last_seen_ago or '—' }}</span></span>
-          {% if d.session_start %}<span><svg class="ic"><use href="#i-shield"/></svg>เริ่มเฝ้า <span class="js-session" data-ts="{{ d.session_start }}">{{ d.session_start_ago }}</span></span>{% endif %}
-        </div>
+        {{ status_badge(d.status) }}
       </div>
-      {{ status_badge(d.status) }}
-    </div>
 
-    <div class="meta">
-      <div class="mi">
-        <span class="icw"><svg class="ic"><use href="#i-gamepad"/></svg></span>
-        <div><div class="k">เกม</div>
+      <div class="meta">
+        <div class="mi">
+          <div class="k"><svg class="ic"><use href="#i-gamepad"/></svg>เกม</div>
           <div class="v js-game {{ 'ok' if d.game_running else 'no' }}">{{ 'เปิดอยู่' if d.game_running else 'ปิด' }}</div>
         </div>
-      </div>
-      <div class="mi">
-        <span class="icw"><svg class="ic"><use href="#i-user"/></svg></span>
-        <div><div class="k">ตัวละคร</div><div class="v js-character">{{ d.character or '—' }}</div></div>
-      </div>
-      <div class="mi">
-        <span class="icw"><svg class="ic"><use href="#i-map"/></svg></span>
-        <div><div class="k">แมพ</div><div class="v js-map">{{ d.map or '—' }}</div></div>
-      </div>
-      <div class="mi">
-        <span class="icw"><svg class="ic"><use href="#i-refresh"/></svg></span>
-        <div><div class="k">กู้เกมแล้ว</div><div class="v"><span class="js-rejoins">{{ d.rejoin_count }}</span> ครั้ง</div></div>
-      </div>
-    </div>
-
-    <div class="actions">
-      {% if d.armed %}
-        <button class="btn danger js-armbtn" onclick="cmd('{{ d.device_id }}','disarm')">
-          <svg class="ic"><use href="#i-stop"/></svg> หยุดเฝ้า
-        </button>
-      {% else %}
-        <button class="btn success js-armbtn" onclick="cmd('{{ d.device_id }}','arm')">
-          <svg class="ic"><use href="#i-play"/></svg> เริ่มเฝ้าเกม
-        </button>
-      {% endif %}
-      <button class="btn soft" onclick="cmd('{{ d.device_id }}','rejoin_now')">
-        <svg class="ic"><use href="#i-zap"/></svg> กู้เกมทันที
-      </button>
-      <button class="btn soft" onclick="cmd('{{ d.device_id }}','screenshot')">
-        <svg class="ic"><use href="#i-camera"/></svg> แคปภาพ
-      </button>
-      <span class="spacer"></span>
-      <button class="btn ghost" onclick="askRemoveDevice('{{ d.device_id }}','{{ d.name }}')">
-        <svg class="ic"><use href="#i-trash"/></svg> ลบเครื่อง
-      </button>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" data-tab="shots" onclick="switchTab(this)">
-        <svg class="ic"><use href="#i-image"/></svg> ภาพหน้าจอ
-        {% if d.screenshots %}<span class="pill">{{ d.screenshots|length }}</span>{% endif %}
-      </button>
-      <button class="tab" data-tab="events" onclick="switchTab(this)">
-        <svg class="ic"><use href="#i-list"/></svg> ประวัติ
-        {% if d.events %}<span class="pill">{{ d.events|length }}</span>{% endif %}
-      </button>
-    </div>
-
-    <div class="pane" data-pane="shots">
-      {% if d.screenshots %}
-      <div class="shots">
-        {% for s in d.screenshots %}
-        <figure class="shot">
-          <a href="{{ s.url }}" target="_blank" rel="noopener">
-            <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ d.name }}" loading="lazy">
-          </a>
-          <figcaption class="cap">
-            <span>{{ s.ago }}</span>
-            <button class="del" title="ลบภาพ" aria-label="ลบภาพ" onclick="removeShot({{ s.id }})">
-              <svg class="ic"><use href="#i-x"/></svg>
-            </button>
-          </figcaption>
-        </figure>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="none">
-        <svg class="ic"><use href="#i-camera"/></svg>
-        ยังไม่มีภาพ — กด “แคปภาพ” เพื่อขอภาพจากเครื่องนี้
-      </div>
-      {% endif %}
-    </div>
-
-    <div class="pane" data-pane="events" hidden>
-      {% if d.events %}
-      <div class="evlist">
-        {% for e in d.events %}
-        <div class="ev ev-{{ e.type }}">
-          <span class="evic">{{ ev_icon(e.type) }}</span>
-          <span class="evtxt">
-            {% if e.type == 'rejoin' %}กู้เกมสำเร็จ (ครั้งที่ {{ e.detail.get('count','') }})
-            {% elif e.type == 'alert' %}กู้ไม่ได้ — ต้องตรวจสอบ
-            {% elif e.type == 'arm' %}เริ่มเฝ้าเกม
-            {% elif e.type == 'disarm' %}หยุดเฝ้าเกม
-            {% elif e.type == 'rejoin_now' %}สั่งกู้เกมทันที
-            {% elif e.type == 'screenshot_now' %}สั่งแคปภาพ
-            {% else %}{{ e.type }}{% endif %}
-          </span>
-          <span class="evtime">{{ e.ago }}</span>
+        <div class="mi">
+          <div class="k"><svg class="ic"><use href="#i-user"/></svg>ตัวละคร</div>
+          <div class="v js-character">{{ d.character or '—' }}</div>
         </div>
-        {% endfor %}
+        <div class="mi">
+          <div class="k"><svg class="ic"><use href="#i-map"/></svg>แมพ</div>
+          <div class="v js-map">{{ d.map or '—' }}</div>
+        </div>
+        <div class="mi">
+          <div class="k"><svg class="ic"><use href="#i-refresh"/></svg>กู้เกมแล้ว</div>
+          <div class="v"><span class="js-rejoins">{{ d.rejoin_count }}</span> ครั้ง</div>
+        </div>
       </div>
-      {% else %}
-      <div class="none">
-        <svg class="ic"><use href="#i-list"/></svg>
-        ยังไม่มีเหตุการณ์
+
+      <div class="actions">
+        {% if d.armed %}
+          <button class="btn danger js-armbtn" onclick="cmd('{{ d.device_id }}','disarm')">
+            <svg class="ic"><use href="#i-stop"/></svg> หยุดเฝ้า
+          </button>
+        {% else %}
+          <button class="btn success js-armbtn" onclick="cmd('{{ d.device_id }}','arm')">
+            <svg class="ic"><use href="#i-play"/></svg> เริ่มเฝ้าเกม
+          </button>
+        {% endif %}
+        <button class="btn default" onclick="cmd('{{ d.device_id }}','rejoin_now')">
+          <svg class="ic"><use href="#i-zap"/></svg> กู้เกมทันที
+        </button>
+        <button class="btn default" onclick="cmd('{{ d.device_id }}','screenshot')">
+          <svg class="ic"><use href="#i-camera"/></svg> แคปภาพ
+        </button>
+        <span class="spacer"></span>
+        <button class="btn ghost" onclick="askRemoveDevice('{{ d.device_id }}','{{ d.name }}')">
+          <svg class="ic"><use href="#i-trash"/></svg> ลบเครื่อง
+        </button>
       </div>
-      {% endif %}
+
+      <div class="tabs">
+        <button class="tab active" data-tab="shots" onclick="switchTab(this)">
+          <svg class="ic"><use href="#i-image"/></svg> ภาพหน้าจอ
+          {% if d.screenshots %}<span class="pill">{{ d.screenshots|length }}</span>{% endif %}
+        </button>
+        <button class="tab" data-tab="events" onclick="switchTab(this)">
+          <svg class="ic"><use href="#i-list"/></svg> ประวัติ
+          {% if d.events %}<span class="pill">{{ d.events|length }}</span>{% endif %}
+        </button>
+      </div>
+
+      <div class="pane" data-pane="shots">
+        {% if d.screenshots %}
+        <div class="shots">
+          {% for s in d.screenshots %}
+          <figure class="shot">
+            <a href="{{ s.url }}" target="_blank" rel="noopener">
+              <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ d.name }}" loading="lazy">
+            </a>
+            <figcaption class="cap">
+              <span>{{ s.ago }}</span>
+              <button class="del" title="ลบภาพ" aria-label="ลบภาพ" onclick="removeShot({{ s.id }})">
+                <svg class="ic"><use href="#i-x"/></svg>
+              </button>
+            </figcaption>
+          </figure>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="none">
+          <svg class="ic"><use href="#i-camera"/></svg>
+          ยังไม่มีภาพ — กด “แคปภาพ” เพื่อขอภาพจากเครื่องนี้
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="pane" data-pane="events" hidden>
+        {% if d.events %}
+        <div class="evlist">
+          {% for e in d.events %}
+          <div class="ev ev-{{ e.type }}">
+            <span class="evic">{{ ev_icon(e.type) }}</span>
+            <span class="evtxt">
+              {% if e.type == 'rejoin' %}กู้เกมสำเร็จ (ครั้งที่ {{ e.detail.get('count','') }})
+              {% elif e.type == 'alert' %}กู้ไม่ได้ — ต้องตรวจสอบ
+              {% elif e.type == 'arm' %}เริ่มเฝ้าเกม
+              {% elif e.type == 'disarm' %}หยุดเฝ้าเกม
+              {% elif e.type == 'rejoin_now' %}สั่งกู้เกมทันที
+              {% elif e.type == 'screenshot_now' %}สั่งแคปภาพ
+              {% else %}{{ e.type }}{% endif %}
+            </span>
+            <span class="evtime">{{ e.ago }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="none">
+          <svg class="ic"><use href="#i-list"/></svg>
+          ยังไม่มีเหตุการณ์
+        </div>
+        {% endif %}
+      </div>
     </div>
   </section>
   {% endfor %}
@@ -553,7 +524,7 @@
     <p>นำรหัสนี้ไปกรอกในแอป Rejoin บนคลาวโฟน — <b>ระบบจะแสดงรหัสครั้งเดียว</b> กรุณาจดเก็บไว้</p>
     <div class="code" id="codeText">RJ-XXXXX-XXXXX</div>
     <div class="modal-actions">
-      <button class="btn soft" onclick="copyCode()"><svg class="ic"><use href="#i-copy"/></svg> คัดลอกรหัส</button>
+      <button class="btn default" onclick="copyCode()"><svg class="ic"><use href="#i-copy"/></svg> คัดลอกรหัส</button>
       <button class="btn primary" onclick="closeModal('codeModal');location.reload()">เสร็จสิ้น</button>
     </div>
   </div>

@@ -4,67 +4,67 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08090a">
 <title>Rejoin — เข้าสู่ระบบ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
   :root{
-    --bg:#080d17; --card:#111a2b; --card-2:#0e1626; --line:#22304a; --line-2:#1a2438;
-    --txt:#eaf0f8; --muted:#93a2bb; --dim:#64748b; --accent:#4f8cff; --accent-2:#22d3a6;
+    --bg:#08090a; --bg-2:#0f1011; --elev:#16171a;
+    --hover:rgba(255,255,255,.045); --border:#23252a; --border-2:#2c2e33;
+    --text:#f7f8f8; --text-2:#d0d6e0; --muted:#8a8f98; --dim:#62666d;
+    --accent:#5e6ad2; --accent-h:#6e79dd; --green:#4cb782; --amber:#f2c94c;
   }
   body{
-    margin:0;min-height:100vh;color:var(--txt);
-    font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
-    display:flex;align-items:center;justify-content:center;padding:24px;
-    background:
-      radial-gradient(900px 480px at 78% -10%, #17233f 0%, transparent 58%),
-      radial-gradient(680px 420px at 6% 8%, #10203a 0%, transparent 52%),
-      var(--bg);
+    margin:0;min-height:100vh;color:var(--text);font-size:14px;letter-spacing:-.006em;
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(680px 320px at 50% -80px, rgba(94,106,210,.13), transparent 70%) no-repeat var(--bg);
+    background-attachment:fixed;
   }
-  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;
-      stroke-linecap:round;stroke-linejoin:round;vertical-align:-.13em;flex:none}
+  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;
+      stroke-linejoin:round;vertical-align:-.14em;flex:none}
   .ic.fill{fill:currentColor;stroke:none}
 
-  .card{
-    width:100%;max-width:440px;background:linear-gradient(180deg,var(--card),var(--card-2));
-    border:1px solid var(--line);border-radius:24px;padding:38px 34px;
-    box-shadow:0 50px 110px -50px #000;animation:pop .35s ease;
-  }
-  @keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  .logo{
-    width:56px;height:56px;border-radius:18px;display:grid;place-items:center;
-    background:linear-gradient(145deg,#4f8cff,#22d3a6);color:#04121f;font-size:27px;
-    box-shadow:0 16px 34px -16px #4f8cff;margin-bottom:20px;
-  }
-  h1{margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-.4px}
-  .sub{color:var(--muted);font-size:14px;line-height:1.65;margin:0 0 22px}
+  .card{width:100%;max-width:400px;background:var(--bg-2);border:1px solid var(--border);
+        border-radius:14px;padding:32px;box-shadow:0 30px 70px -40px rgba(0,0,0,.9);animation:pop .35s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-  ul{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:12px}
-  li{display:flex;align-items:center;gap:12px;font-size:14px;color:#cdd8ea}
-  li .icw{width:32px;height:32px;border-radius:10px;flex:none;display:grid;place-items:center;
-          font-size:16px;background:rgba(79,140,255,.1);color:var(--accent)}
-  li .icw.g{background:rgba(34,211,166,.1);color:var(--accent-2)}
+  .logo{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;color:#fff;
+        background:linear-gradient(135deg,#5e6ad2,#8b7ff0);margin-bottom:18px;
+        box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18)}
+  .logo .ic{width:22px;height:22px}
+  h1{margin:0 0 6px;font-size:19px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 22px}
 
-  a.btn{display:flex;align-items:center;justify-content:center;gap:10px;
-        padding:14px 22px;border-radius:13px;font-weight:700;font-size:15px;
-        text-decoration:none;transition:filter .15s,transform .12s}
-  a.btn:hover{filter:brightness(1.08)}
-  a.btn:active{transform:translateY(1px)}
-  a.discord{background:#5865F2;color:#fff;box-shadow:0 14px 30px -14px #5865F2}
-  a.discord .ic{width:20px;height:20px}
-  a.dev{margin-top:10px;background:var(--card-2);color:var(--muted);border:1px solid var(--line);
-        font-size:13.5px;padding:11px}
-  a.dev:hover{color:var(--txt)}
+  ul{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:11px}
+  li{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--text-2)}
+  li .icw{width:26px;height:26px;border-radius:7px;flex:none;display:grid;place-items:center;
+          color:var(--muted);background:var(--hover);border:1px solid var(--border)}
+  li .icw .ic{width:14px;height:14px}
 
-  .warn{display:flex;gap:9px;align-items:flex-start;color:#fbbf24;font-size:12.5px;
-        line-height:1.55;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
-        border-radius:12px;padding:12px 14px;margin-bottom:14px}
-  .warn .ic{width:16px;height:16px;margin-top:1px}
+  a.btn{display:flex;align-items:center;justify-content:center;gap:9px;height:38px;padding:0 16px;
+        border-radius:9px;font-size:13.5px;font-weight:500;text-decoration:none;
+        transition:background .12s,border-color .12s,color .12s}
+  a.btn:active{transform:translateY(.5px)}
+  a.discord{background:#5865F2;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
+  a.discord:hover{background:#6b76f3}
+  a.discord .ic{width:18px;height:18px}
+  a.dev{margin-top:9px;background:var(--hover);color:var(--text-2);border:1px solid var(--border);font-size:13px}
+  a.dev:hover{background:rgba(255,255,255,.075);color:var(--text)}
+
+  .warn{display:flex;gap:9px;align-items:flex-start;color:#e6c356;font-size:12.5px;line-height:1.5;
+        background:rgba(242,201,76,.08);border:1px solid rgba(242,201,76,.22);border-radius:9px;
+        padding:11px 13px;margin-bottom:12px}
+  .warn .ic{width:15px;height:15px;margin-top:1px;color:var(--amber)}
   .foot{margin-top:20px;font-size:11.5px;color:var(--dim);text-align:center}
 </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo"><svg class="ic" style="width:28px;height:28px;stroke-width:2.3"><use href="#i-refresh"/></svg></div>
+    <div class="logo"><svg class="ic" style="width:22px;height:22px;stroke-width:2.3"><use href="#i-refresh"/></svg></div>
     <h1>Rejoin</h1>
     <p class="sub">ปล่อยบอทไว้ได้ ไม่ต้องเฝ้า — เกมหลุดแล้วระบบกู้ให้เองอัตโนมัติ</p>
 
@@ -78,7 +78,7 @@
         ดูสถานะทุกเครื่องได้ตลอดจากมือถือ
       </li>
       <li>
-        <span class="icw g"><svg class="ic"><use href="#i-smartphone"/></svg></span>
+        <span class="icw"><svg class="ic"><use href="#i-smartphone"/></svg></span>
         ใช้หลายเครื่อง/หลายไอดีในบัญชีเดียว
       </li>
     </ul>
