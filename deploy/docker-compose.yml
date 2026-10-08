@@ -1,0 +1,76 @@
+# Production stack — Rejoin (ใช้ได้ทั่วโลก)
+# ------------------------------------------------------------------
+# รันบน VPS:  docker compose -f deploy/docker-compose.yml up -d --build
+# ต้องมี: โดเมนชี้ A record → IP ของ VPS + เปิดพอร์ต 80/443
+#
+# ตั้งค่า: คัดลอก deploy/.env.example → deploy/.env แล้วแก้ค่า
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rejoin:${POSTGRES_PASSWORD}@postgres:5432/rejoin
+      REDIS_URL: redis://redis:6379/0
+      COOKIE_SECURE: "true"
+      DEV_AUTH: "false"
+      SCREENSHOT_DIR: /data/screenshots
+      LUA_DIR: skeleton/lua
+    volumes:
+      - screenshots:/data/screenshots
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rejoin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: rejoin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rejoin"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # reverse proxy + HTTPS อัตโนมัติ (Let's Encrypt)
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  screenshots:
+  caddydata:
+  caddyconfig:

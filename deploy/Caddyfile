@@ -1,0 +1,10 @@
+# Caddy — reverse proxy + HTTPS อัตโนมัติ
+# DOMAIN มาจาก env (deploy/.env) — ต้องชี้ DNS มาที่เครื่องนี้ก่อน
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy app:8000
+	log {
+		output stdout
+		format console
+	}
+}

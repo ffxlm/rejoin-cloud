@@ -28,9 +28,7 @@ class Prefs(context: Context) {
 
     var serverUrl: String
         get() = sp.getString(KEY_SERVER_URL, DEFAULT_SERVER) ?: DEFAULT_SERVER
-        set(v) = sp.edit().putString(KEY_SERVER_URL, v).apply()
-
-    /** device_token ที่ได้หลังลงทะเบียน (เก็บเข้ารหัส) */
+        set(v) = sp.edit().putString(KEY_SERVER_URL, v).apply()    /** device_token ที่ได้หลังลงทะเบียน (เก็บเข้ารหัส) */
     var deviceToken: String?
         get() = sp.getString(KEY_DEVICE_TOKEN, null)
         set(v) = sp.edit().putString(KEY_DEVICE_TOKEN, v).apply()
@@ -60,7 +58,7 @@ class Prefs(context: Context) {
         private const val KEY_SILENCE = "silence_sec"
         private const val KEY_TIMEOUT = "timeout_sec"
 
-        const val DEFAULT_SERVER = "http://127.0.0.1:8000"
+        const val DEFAULT_SERVER = "https://rejoin.example.com"  // ← แก้เป็นโดเมนจริงของคุณ
         const val DEFAULT_PLACE_ID = 107778070777162L
     }
 }
