@@ -15,7 +15,8 @@
 - ✅ Walking Skeleton — รันได้จริง
 - ✅ Watchdog + auto-rejoin จริง — ผ่าน (13/13 unit tests + end-to-end บนเครื่อง)
 - ✅ **Backend จริง (P1)** — Postgres/Redis + Discord OAuth + รหัสเครื่อง hash (24 tests ผ่าน)
-- ⏭️ เหลือ: **APK Kotlin จริง** (auth/DB/APK/alert/screenshot)
+- ✅ **APK Kotlin สเกเลตัน** — build บน GitHub Actions + ติดตั้ง/รันจริงบนเครื่องแล้ว (UI + Foreground Service)
+- ⏭️ เหลือ: **พอร์ตฟีเจอร์เข้า APK** (Lua/file watcher/watchdog/root) + alert + screenshot
 
 ---
 
@@ -83,10 +84,15 @@ python3 -m venv .venv
   - ยังรันค้างอยู่: `phase0/local_listener.py` (pid 2535) — `pkill -f local_listener`
   - หมายเหตุ: ไฟล์ `phase0/` เก็บไว้เป็นหลักฐาน Phase 0 ก่อน (ลบโปรเซสได้ แต่ยังไม่ต้องลบไฟล์)
 
-### 🟠 P1 — เฟส 1 จริง: APK Kotlin (แทน agent.py)
-- [ ] สร้าง Android project (Kotlin, Gradle) — ต้องติดตั้ง Android SDK ก่อน
-- [ ] **Foreground Service** ทำงานตลอด (กัน Doze/ระบบฆ่า)
-- [ ] ลงทะเบียนด้วยรหัสเครื่อง → ได้ device_token → เก็บใน **EncryptedSharedPreferences/Keystore**
+### 🟠 P1 — เฟส 1 จริง: APK Kotlin (แทน agent.py) — 🚧 สเกเลตันรันจริงแล้ว (commit `bcac1da`, `cdc4870`)
+- [x] สร้าง Android project (Kotlin, Gradle) — `android/` (AGP 8.5.2, Gradle 8.7, compileSdk 34)
+- [x] **build บน GitHub Actions** (ไม่ต้องติดตั้ง Android SDK บนเครื่อง) — `.github/workflows/android.yml`
+- [x] **ติดตั้ง + รันจริงบนเครื่อง**: UI ขึ้น, Foreground Service `isForeground=true`, กดเริ่ม/หยุดได้
+- [x] **Foreground Service** ทำงานตลอด (กัน Doze/ระบบฆ่า) — `RejoinService` (specialUse)
+- [x] หน้า UI กรอกรหัสเครื่อง + เซิร์ฟเวอร์ + ปุ่มเริ่ม/หยุด — `MainActivity`
+- [x] เก็บ token เข้ารหัส — `Prefs` (EncryptedSharedPreferences/Keystore)
+- [ ] ลงทะเบียนด้วยรหัสเครื่อง → ได้ device_token (เรียก API จริง)
+- [ ] ดึง Lua จากเว็บ (`GET /api/download/lua`) แล้วเขียนลง `Delta/Autoexecute/`
 - [ ] อ่าน `lua_state.json` (file watcher) → คำนวณความเงียบ
 - [ ] ย้าย logic จาก `watchdog.py` เป็น Kotlin (พอร์ตตรงๆ ได้ — มันเป็น pure)
 - [ ] สั่งรีเกมผ่าน root (`su -c am force-stop / am start`)
@@ -167,6 +173,13 @@ rejoin-cloud/
 ├── requirements.txt      # dependency ของ backend
 ├── .env.example          # ตัวอย่าง env (Postgres/Redis/Discord)
 ├── docker-compose.yml    # pg + redis + minio (production/dev infra)
+├── .github/workflows/
+│   └── android.yml       # ★ CI: build APK บน GitHub Actions
+├── android/              # ★ APK Kotlin (สเกเลตัน — ดู android/README.md)
+│   └── app/src/main/java/com/rejoin/agent/
+│       ├── MainActivity.kt     # UI กรอกรหัสเครื่อง
+│       ├── RejoinService.kt    # Foreground Service (ยังไม่ทำ watchdog)
+│       └── Prefs.kt            # EncryptedSharedPreferences
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
 └── skeleton/
     ├── README.md         # วิธีรัน skeleton
@@ -224,7 +237,7 @@ curl -b cookies.txt http://127.0.0.1:8000/api/me/devices
 2. timeout ที่เหมาะกับเน็ตช้า: 300 วิ? หรือปรับตาม state?
 3. ~~เลือก tech stack จริง: FastAPI (ตามแผน) หรือ NestJS?~~ → **เลือก FastAPI แล้ว**
 4. แจ้งเตือนช่องไหนก่อน: LINE / Telegram / Discord?
-5. APK: build บนเครื่องนี้ (ต้องโหลด SDK ~ใหญ่) หรือ CI?
+5. ~~APK: build บนเครื่องนี้ หรือ CI?~~ → **เลือก build บน GitHub Actions แล้ว** (ไม่ต้องลง SDK ในเครื่อง)
 
 ---
 

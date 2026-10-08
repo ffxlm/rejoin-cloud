@@ -25,12 +25,19 @@ push โค้ดใน `android/` ขึ้น GitHub → workflow `.github/wor
 .tools/platform-tools/adb install -r rejoin-agent-debug/app-debug.apk
 ```
 
-## สถานะสเกเลตัน (buildable)
+## สถานะสเกเลตัน (buildable + รันจริงบนเครื่องแล้ว)
 - [x] Gradle + Kotlin + AndroidX + Material3
 - [x] `MainActivity` — กรอกรหัสเครื่อง + เซิร์ฟเวอร์, ปุ่มเริ่ม/หยุด
 - [x] `RejoinService` — Foreground Service (specialUse) + notification ค้าง
 - [x] `Prefs` — EncryptedSharedPreferences (เก็บ device_token เข้ารหัส)
 - [x] manifest + สิทธิ์ (INTERNET, FOREGROUND_SERVICE, POST_NOTIFICATIONS, …)
+
+### ✅ ยืนยันบนเครื่องจริง (2026-10-08)
+- build บน CI สำเร็จ → `app-debug.apk` (6.8 MB)
+- `adb install -r` สำเร็จ → เปิดแอป UI ขึ้นถูกต้อง
+- กด "เริ่มเฝ้า" → Foreground Service รัน (`isForeground=true`) + notification ค้าง
+- กด "หยุดเฝ้า" → service หยุด สถานะเป็น "หยุดแล้ว"
+- ⚠️ ยังเป็นสเกเลตัน — **ยังไม่คุยกับเว็บ/ยังไม่แตะ Lua/เกม** (สเต็ปถัดไป)
 
 ## ยังไม่ทำ (สเต็ปถัดไป)
 - [ ] File watcher อ่าน `Delta/Workspace/lua_state.json` → คำนวณความเงียบ
