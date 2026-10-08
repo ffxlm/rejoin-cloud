@@ -16,7 +16,10 @@
 - ✅ Watchdog + auto-rejoin จริง — ผ่าน (13/13 unit tests + end-to-end บนเครื่อง)
 - ✅ **Backend จริง (P1)** — Postgres/Redis + Discord OAuth + รหัสเครื่อง hash (24 tests ผ่าน)
 - ✅ **APK Kotlin สเกเลตัน** — build บน GitHub Actions + ติดตั้ง/รันจริงบนเครื่องแล้ว (UI + Foreground Service)
-- ⏭️ เหลือ: **พอร์ตฟีเจอร์เข้า APK** (Lua/file watcher/watchdog/root) + alert + screenshot
+- ✅ **APK ทำงานจริงแล้ว** — พอร์ต agent.py → Kotlin ครบ (register/Lua/watchdog/root rejoin)
+  ทดสอบ end-to-end ผ่าน **public HTTPS** (ข้ามเน็ตจริง) สำเร็จ: arm → เปิดเกมเอง → armed
+- ✅ **Deploy stack** — Dockerfile + compose (app/pg/redis/Caddy HTTPS) + `DEPLOY.md` พร้อมขึ้น VPS
+- ⏭️ เหลือ: deploy จริงบน VPS + Discord OAuth จริง + P2 (alert/screenshot/WebSocket)
 
 ---
 
@@ -84,21 +87,20 @@ python3 -m venv .venv
   - ยังรันค้างอยู่: `phase0/local_listener.py` (pid 2535) — `pkill -f local_listener`
   - หมายเหตุ: ไฟล์ `phase0/` เก็บไว้เป็นหลักฐาน Phase 0 ก่อน (ลบโปรเซสได้ แต่ยังไม่ต้องลบไฟล์)
 
-### 🟠 P1 — เฟส 1 จริง: APK Kotlin (แทน agent.py) — 🚧 สเกเลตันรันจริงแล้ว (commit `bcac1da`, `cdc4870`)
+### 🟠 P1 — เฟส 1 จริง: APK Kotlin (แทน agent.py) — ✅ ทำงานจริงแล้ว (commit `2cf8ef1`)
 - [x] สร้าง Android project (Kotlin, Gradle) — `android/` (AGP 8.5.2, Gradle 8.7, compileSdk 34)
 - [x] **build บน GitHub Actions** (ไม่ต้องติดตั้ง Android SDK บนเครื่อง) — `.github/workflows/android.yml`
-- [x] **ติดตั้ง + รันจริงบนเครื่อง**: UI ขึ้น, Foreground Service `isForeground=true`, กดเริ่ม/หยุดได้
-- [x] **Foreground Service** ทำงานตลอด (กัน Doze/ระบบฆ่า) — `RejoinService` (specialUse)
-- [x] หน้า UI กรอกรหัสเครื่อง + เซิร์ฟเวอร์ + ปุ่มเริ่ม/หยุด — `MainActivity`
+- [x] **ติดตั้ง + รันจริงบนเครื่อง**: UI ขึ้น, Foreground Service, กดเริ่ม/หยุดได้
+- [x] **Foreground Service** ทำงานตลอด (กัน Doze/ระบบฆ่า) — `RejoinService`
+- [x] หน้า UI กรอกรหัสเครื่อง + เซิร์ฟเวอร์ + placeId + สถานะ + log สด — `MainActivity`
 - [x] เก็บ token เข้ารหัส — `Prefs` (EncryptedSharedPreferences/Keystore)
-- [ ] ลงทะเบียนด้วยรหัสเครื่อง → ได้ device_token (เรียก API จริง)
-- [ ] ดึง Lua จากเว็บ (`GET /api/download/lua`) แล้วเขียนลง `Delta/Autoexecute/`
-- [ ] อ่าน `lua_state.json` (file watcher) → คำนวณความเงียบ
-- [ ] ย้าย logic จาก `watchdog.py` เป็น Kotlin (พอร์ตตรงๆ ได้ — มันเป็น pure)
-- [ ] สั่งรีเกมผ่าน root (`su -c am force-stop / am start`)
-- [ ] ยัด Lua (atomic + backup) — พอร์ตจาก `device.py:push_lua`
-- [ ] ส่ง heartbeat ไปเว็บ (OkHttp)
-- [ ] Poll คำสั่ง arm/disarm/rejoin_now
+- [x] ลงทะเบียนด้วยรหัสเครื่อง → ได้ device_token — `Api.register`
+- [x] ดึง Lua จากเว็บ (`GET /api/download/lua`) แล้วเขียนลง `Delta/Autoexecute` (atomic+backup) — `LuaInstaller`
+- [x] อ่าน `lua_state.json` → คำนวณความเงียบ — `RootShell` + `LuaState`
+- [x] watchdog state machine (พอร์ตจาก `watchdog.py`) — `Watchdog.kt` + 17 unit tests
+- [x] สั่งรีเกมผ่าน root (`su -c am force-stop / am start`) — `RootShell`
+- [x] ส่ง heartbeat ไปเว็บ (OkHttp) + รับคำสั่ง arm/disarm/rejoin_now — `Api`
+- [x] **ทดสอบ end-to-end ผ่าน public HTTPS สำเร็จ** (register→Lua→arm→เปิดเกมเอง→armed)
 
 ### 🟠 P1 — Backend จริง (แทน in-memory) — ✅ เสร็จแล้ว (commit `68beb0b`)
 - [x] **Discord OAuth2** login (session cookie) + `/auth/dev` สำหรับ dev
@@ -108,7 +110,8 @@ python3 -m venv .venv
 - [x] `/api/agent/register` ตรวจ device_code จริง (ไม่รับมั่วแล้ว)
 - [x] ย้าย event log จาก memory → ตาราง `events`
 - [x] แดชบอร์ด Jinja2 + ปุ่ม arm/disarm/rejoin_now + เพิ่มเครื่อง
-- [ ] เปิดใช้ Postgres/Redis จริงบน production (ต้องมีสิทธิ์ docker / ติดตั้งในเครื่อง)
+- [x] **Deploy stack** — `deploy/` (Dockerfile + compose app/pg/redis/Caddy) + `DEPLOY.md`
+- [ ] deploy จริงบน VPS (ต้องมี VPS + โดเมนของคุณ)
 - [ ] ยืนยัน Discord OAuth กับ app จริง (ต้องมี DISCORD_CLIENT_ID/SECRET)
 
 ### 🟡 P2 — ฟีเจอร์ใช้งานจริง
@@ -172,13 +175,23 @@ rejoin-cloud/
 ├── PHASE0_RESULTS.md     # ผลเทสต์ Phase 0
 ├── requirements.txt      # dependency ของ backend
 ├── .env.example          # ตัวอย่าง env (Postgres/Redis/Discord)
-├── docker-compose.yml    # pg + redis + minio (production/dev infra)
+├── docker-compose.yml    # pg + redis + minio (dev infra)
+├── DEPLOY.md             # ★ คู่มือ deploy ขึ้น VPS (ใช้ได้ทั่วโลก)
+├── deploy/               # ★ stack production
+│   ├── Dockerfile
+│   ├── docker-compose.yml  # app + postgres + redis + caddy(HTTPS)
+│   ├── Caddyfile
+│   └── .env.example
 ├── .github/workflows/
 │   └── android.yml       # ★ CI: build APK บน GitHub Actions
-├── android/              # ★ APK Kotlin (สเกเลตัน — ดู android/README.md)
+├── android/              # ★ APK Kotlin (ทำงานจริง — ดู android/README.md)
 │   └── app/src/main/java/com/rejoin/agent/
-│       ├── MainActivity.kt     # UI กรอกรหัสเครื่อง
-│       ├── RejoinService.kt    # Foreground Service (ยังไม่ทำ watchdog)
+│       ├── MainActivity.kt     # UI กรอกรหัส + log สด
+│       ├── RejoinService.kt    # Foreground Service → AgentLoop
+│       ├── AgentLoop.kt        # orchestrator (register→Lua→เฝ้า→รีเกม)
+│       ├── Watchdog.kt         # dead-man's switch (pure)
+│       ├── RootShell.kt        # su -c (pidof/force-stop/launch/push Lua)
+│       ├── Api.kt              # OkHttp (register/heartbeat/event/lua)
 │       └── Prefs.kt            # EncryptedSharedPreferences
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
 └── skeleton/
