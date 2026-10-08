@@ -1,226 +1,157 @@
 """
-Walking Skeleton backend (FastAPI)
-------------------------------------------------------------------
-พิสูจน์ loop บางที่สุด:
-    Lua เขียน lua_state.json
-      -> agent stub อ่านไฟล์ -> POST /api/agent/heartbeat
-      -> backend เก็บสถานะ -> แดชบอร์ดขึ้น alive
+app.py — Rejoin Backend (FastAPI) — ของจริง (Postgres/Redis) + dev fallback
+==================================================================
+แทนที่ walking skeleton (in-memory) ด้วย:
+  - PostgreSQL (SQLAlchemy async) — dev ใช้ SQLite อัตโนมัติ
+  - Redis (last_seen TTL + คิวคำสั่ง) — dev ใช้ fakeredis
+  - Discord OAuth2 + session cookie — dev เปิด /auth/dev
+  - รหัสเครื่องแบบ hash (Argon2 + lookup sha256), revoke ได้
+  - event log ลง DB
 
-ยังไม่มี: auth จริง, DB จริง, screenshot, alert
-ใช้ in-memory store พอสำหรับพิสูจน์ loop
-
-รัน:
+รัน (dev):
     .venv/bin/uvicorn skeleton.backend.app:app --host 0.0.0.0 --port 8000
+รัน (production): ตั้ง env ตาม .env.example (DATABASE_URL, REDIS_URL, DISCORD_*, ...)
 """
-import time
-from typing import Optional
+from __future__ import annotations
 
-from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
+import os
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Rejoin Walking Skeleton")
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.middleware.sessions import SessionMiddleware
 
-# ---- in-memory store (skeleton เท่านั้น) ----
-DEVICES: dict[str, dict] = {}   # device_id -> state
-TOKENS: dict[str, str] = {}     # device_token -> device_id
-CODES: dict[str, str] = {}      # device_code -> device_id
-EVENTS: list[dict] = []         # เหตุการณ์ (rejoin/alert/arm)
+from .config import Settings
+from .db import Base, build_engine, build_sessionmaker
+from .deps import get_db, get_store
+from .models import Device, Event, User
+from .redis_store import Store, build_store
+from .routers import agent as agent_router
+from .routers import auth as auth_router
+from .routers import device as device_router
+from .routers import me as me_router
+from .serializers import build_device_view, user_public
 
-SILENCE_THRESHOLD = 60          # วินาที
-
-
-class RegisterIn(BaseModel):
-    device_code: str
-    apk_version: Optional[str] = None
-    android_id: Optional[str] = None
-
-
-class HeartbeatIn(BaseModel):
-    v: int = 1
-    state: str = "connected"
-    game_running: bool = False
-    lua_active: bool = False
-    lua_age_sec: Optional[int] = None
-    lua_state: Optional[str] = None
-    avatar: Optional[str] = None
-    character: Optional[str] = None
-    map: Optional[str] = None
-    rejoin_count: int = 0
-    session_start: Optional[int] = None
-    ts: Optional[int] = None
+TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
-class EventIn(BaseModel):
-    type: str
-    detail: Optional[dict] = None
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or Settings.from_env()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        engine = build_engine(settings.database_url)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        app.state.settings = settings
+        app.state.engine = engine
+        app.state.sessionmaker = build_sessionmaker(engine)
+        app.state.store = build_store(settings.redis_url, settings.last_seen_ttl_sec)
+        try:
+            yield
+        finally:
+            await app.state.store.close()
+            await engine.dispose()
+
+    app = FastAPI(title="Rejoin Backend", version="1.0.0", lifespan=lifespan)
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.session_secret,
+        max_age=settings.session_max_age,
+        https_only=settings.cookie_secure,
+    )
+
+    app.include_router(auth_router.router)
+    app.include_router(me_router.router)
+    app.include_router(agent_router.router)
+    app.include_router(device_router.router)
+
+    os.makedirs(settings.screenshot_dir, exist_ok=True)
+    app.mount(
+        "/screenshots",
+        StaticFiles(directory=settings.screenshot_dir, check_dir=False),
+        name="screenshots",
+    )
+
+    @app.get("/health")
+    async def health(store: Store = Depends(get_store)):
+        return {"ok": True, "redis": await store.ping(), "db": settings.database_url.split("://")[0]}
+
+    @app.get("/", response_class=HTMLResponse)
+    async def dashboard(
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+        store: Store = Depends(get_store),
+    ):
+        uid = request.session.get("user_id")
+        if not uid:
+            return templates.TemplateResponse(
+                request,
+                "login.html",
+                {
+                    "discord_enabled": settings.discord_enabled,
+                    "dev_auth": settings.dev_auth,
+                },
+            )
+        user = await db.get(User, uid)
+        if user is None:
+            request.session.clear()
+            return templates.TemplateResponse(
+                request,
+                "login.html",
+                {"discord_enabled": settings.discord_enabled, "dev_auth": settings.dev_auth},
+            )
+
+        devices = (
+            await db.execute(select(Device).where(Device.user_id == user.id).order_by(Device.id))
+        ).scalars().all()
+        counts = {}
+        if devices:
+            rows = (
+                await db.execute(
+                    select(Event.device_id, func.count(Event.id))
+                    .where(Event.device_id.in_([d.id for d in devices]), Event.type == "rejoin")
+                    .group_by(Event.device_id)
+                )
+            ).all()
+            counts = {r[0]: r[1] for r in rows}
+
+        views = [
+            await build_device_view(d, store, settings, rejoin_count=counts.get(d.id, 0))
+            for d in devices
+        ]
+
+        events = (
+            await db.execute(
+                select(Event)
+                .where(Event.device_id.in_([d.id for d in devices]) if devices else False)
+                .order_by(Event.ts.desc())
+                .limit(20)
+            )
+        ).scalars().all() if devices else []
+
+        return templates.TemplateResponse(
+            request,
+            "dashboard.html",
+            {
+                "user": user_public(user),
+                "devices": views,
+                "events": [
+                    {"type": e.type, "device_id": str(e.device_id),
+                     "ts": int(e.ts.timestamp()), "detail": e.detail or {}}
+                    for e in events
+                ],
+                "discord_enabled": settings.discord_enabled,
+                "dev_auth": settings.dev_auth,
+            },
+        )
+
+    return app
 
 
-def _now() -> int:
-    return int(time.time())
-
-
-def _derive_status(d: dict) -> str:
-    """คำนวณสถานะจริงจาก last_seen + lua_age (dead-man's switch ฝั่งเว็บ)"""
-    age = _now() - d.get("last_seen", 0)
-    if age > 30:
-        return "offline"
-    if d.get("lua_active"):
-        return "armed" if d.get("armed") else "lua_active"
-    if d.get("game_running"):
-        return "game_running"
-    return "connected"
-
-
-@app.post("/api/agent/register")
-def register(body: RegisterIn):
-    device_id = CODES.get(body.device_code)
-    if not device_id:
-        # skeleton: ยอมรับ code อะไรก็ได้ สร้างเครื่องใหม่
-        device_id = f"dev_{len(DEVICES) + 1}"
-        CODES[body.device_code] = device_id
-    token = f"tok_{device_id}"
-    TOKENS[token] = device_id
-    DEVICES.setdefault(device_id, {
-        "device_id": device_id,
-        "name": f"device {device_id}",
-        "armed": False,
-        "last_seen": 0,
-        "game_running": False,
-        "lua_active": False,
-        "lua_state": None,
-        "rejoin_count": 0,
-        "session_start": None,
-        "avatar": None, "character": None, "map": None,
-    })
-    return {"device_token": token, "device_id": device_id, "interval_sec": 15}
-
-
-@app.post("/api/agent/heartbeat")
-def heartbeat(body: HeartbeatIn, authorization: Optional[str] = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "missing bearer token")
-    token = authorization.split(" ", 1)[1]
-    device_id = TOKENS.get(token)
-    if not device_id:
-        raise HTTPException(401, "invalid token")
-
-    d = DEVICES[device_id]
-    d.update({
-        "last_seen": _now(),
-        "game_running": body.game_running,
-        "lua_active": body.lua_active,
-        "lua_age_sec": body.lua_age_sec,
-        "lua_state": body.lua_state,
-        "avatar": body.avatar,
-        "character": body.character,
-        "map": body.map,
-        "rejoin_count": body.rejoin_count,
-        "session_start": body.session_start or d.get("session_start"),
-    })
-    d["status"] = _derive_status(d)
-    # skeleton: คืนคำสั่ง arm/disarm ถ้ามี
-    cmd = None
-    if d.pop("_pending_arm", False):
-        d["armed"] = True
-        d["status"] = _derive_status(d)
-        cmd = "arm"
-    if d.pop("_pending_disarm", False):
-        d["armed"] = False
-        d["status"] = _derive_status(d)
-        cmd = "disarm"
-    return {"ok": True, "command": cmd}
-
-
-@app.get("/api/me/devices")
-def list_devices():
-    out = []
-    for d in DEVICES.values():
-        d["status"] = _derive_status(d)
-        out.append({k: v for k, v in d.items() if not k.startswith("_")})
-    return {"devices": out}
-
-
-@app.post("/api/agent/event")
-def agent_event(body: EventIn, authorization: Optional[str] = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "missing bearer token")
-    token = authorization.split(" ", 1)[1]
-    device_id = TOKENS.get(token)
-    if not device_id:
-        raise HTTPException(401, "invalid token")
-    ev = {"device_id": device_id, "type": body.type,
-          "detail": body.detail or {}, "ts": _now()}
-    EVENTS.append(ev)
-    if body.type == "rejoin":
-        DEVICES[device_id]["rejoin_count"] = DEVICES[device_id].get("rejoin_count", 0) + 1
-    return {"ok": True}
-
-
-@app.get("/api/me/events")
-def list_events(limit: int = 20):
-    return {"events": EVENTS[-limit:][::-1]}
-
-
-@app.post("/api/device/{device_id}/arm")
-def arm(device_id: str):
-    if device_id not in DEVICES:
-        raise HTTPException(404, "no device")
-    DEVICES[device_id]["_pending_arm"] = True
-    return {"ok": True, "queued": "arm"}
-
-
-@app.post("/api/device/{device_id}/disarm")
-def disarm(device_id: str):
-    if device_id not in DEVICES:
-        raise HTTPException(404, "no device")
-    DEVICES[device_id]["_pending_disarm"] = True
-    return {"ok": True, "queued": "disarm"}
-
-
-@app.get("/health")
-def health():
-    return {"ok": True, "devices": len(DEVICES), "events": len(EVENTS)}
-
-
-@app.get("/", response_class=HTMLResponse)
-def dashboard():
-    rows = ""
-    for d in DEVICES.values():
-        st = _derive_status(d)
-        color = {"armed": "#22c55e", "lua_active": "#eab308", "offline": "#ef4444"}.get(st, "#64748b")
-        age = _now() - d.get("last_seen", 0)
-        rows += f"""
-        <tr>
-          <td>{d['device_id']}</td>
-          <td><span style="color:{color};font-weight:bold">● {st}</span></td>
-          <td>{'✅' if d.get('game_running') else '❌'}</td>
-          <td>{'✅' if d.get('lua_active') else '❌'}</td>
-          <td>{d.get('lua_state') or '-'}</td>
-          <td>{d.get('avatar') or '-'}</td>
-          <td>{d.get('character') or '-'}</td>
-          <td>{d.get('map') or '-'}</td>
-          <td>{age}s</td>
-          <td>{d.get('rejoin_count', 0)}</td>
-        </tr>"""
-    ev_rows = ""
-    for e in EVENTS[-15:][::-1]:
-        ev_rows += (f"<tr><td>{e['ts']}</td><td>{e['type']}</td>"
-                    f"<td>{e['device_id']}</td><td>{e['detail']}</td></tr>")
-    events_html = f"""<h2>Events (ล่าสุด)</h2>
-    <table><tr><th>ts</th><th>type</th><th>device</th><th>detail</th></tr>
-    {ev_rows or '<tr><td colspan="4">ยังไม่มี event</td></tr>'}</table>"""
-    html = f"""<!doctype html><html><head><meta charset="utf-8">
-    <meta http-equiv="refresh" content="3">
-    <title>Rejoin Skeleton</title>
-    <style>body{{font-family:monospace;background:#0f172a;color:#e2e8f0;padding:20px}}
-    table{{border-collapse:collapse;width:100%}} td,th{{border:1px solid #334155;padding:6px 10px;text-align:left}}
-    th{{background:#1e293b}} h1{{color:#38bdf8}} h2{{color:#38bdf8;margin-top:30px}}</style></head>
-    <body><h1>Rejoin — Walking Skeleton</h1>
-    <p>dead-man's switch ฝั่งเว็บ: ไม่ได้ยิน heartbeat > 30s = offline</p>
-    <table><tr><th>device</th><th>status</th><th>game</th><th>lua</th><th>lua_state</th><th>avatar</th>
-    <th>character</th><th>map</th><th>last_seen</th><th>rejoin</th></tr>
-    {rows or '<tr><td colspan="10">ยังไม่มีเครื่อง</td></tr>'}</table>
-    {events_html}
-    </body></html>"""
-    return HTMLResponse(html)
+app = create_app()

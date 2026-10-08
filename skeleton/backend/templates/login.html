@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rejoin — เข้าสู่ระบบ</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0;
+         display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; }
+  .card { background:#1e293b; padding:40px 48px; border-radius:16px; text-align:center;
+          box-shadow:0 10px 40px rgba(0,0,0,.4); max-width:420px; }
+  h1 { color:#38bdf8; margin:0 0 8px; }
+  p { color:#94a3b8; }
+  a.btn { display:inline-block; margin-top:16px; padding:12px 24px; border-radius:8px;
+          background:#5865F2; color:#fff; text-decoration:none; font-weight:600; }
+  a.dev { background:#334155; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Auto-Rejoin</h1>
+    <p>แดชบอร์ดเฝ้าและกู้เกมอัตโนมัติ</p>
+    {% if discord_enabled %}
+      <a class="btn" href="/auth/discord">เข้าสู่ระบบด้วย Discord</a>
+    {% else %}
+      <p>⚠️ ยังไม่ได้ตั้งค่า Discord OAuth</p>
+    {% endif %}
+    {% if dev_auth %}
+      <br>
+      <a class="btn dev" href="/auth/dev">เข้าสู่ระบบแบบ dev</a>
+    {% endif %}
+  </div>
+</body>
+</html>

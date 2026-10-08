@@ -74,6 +74,7 @@ class Agent:
         payload = {
             "v": 1,
             "state": self.wd.phase.value,
+            "armed": self.wd.armed,
             "game_running": obs.game_running,
             "lua_active": obs.lua_age_sec is not None and obs.lua_age_sec <= self.wd.cfg.silence_sec,
             "lua_age_sec": obs.lua_age_sec,

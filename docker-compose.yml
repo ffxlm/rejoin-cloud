@@ -1,0 +1,49 @@
+# Infra สำหรับ production (Phase 1)
+# รัน: docker compose up -d
+# หมายเหตุ: Docker ต้องมีสิทธิ์ (อยู่ในกลุ่ม docker หรือใช้ sudo)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rejoin
+      POSTGRES_PASSWORD: rejoin
+      POSTGRES_DB: rejoin
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rejoin"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # P2 — เก็บภาพหน้าจอ (S3-compatible)
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: rejoin
+      MINIO_ROOT_PASSWORD: rejoin-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
