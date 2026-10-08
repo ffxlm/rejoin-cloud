@@ -42,7 +42,10 @@ class Api(private val prefs: Prefs) {
             .build()
         return try {
             client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) return null
+                if (!resp.isSuccessful) {
+                    AgentState.log("register HTTP ${resp.code}")
+                    return null
+                }
                 val o = JSONObject(resp.body?.string() ?: return null)
                 RegisterResult(
                     deviceToken = o.getString("device_token"),
@@ -51,6 +54,7 @@ class Api(private val prefs: Prefs) {
                 )
             }
         } catch (e: Exception) {
+            AgentState.log("register error: ${e.javaClass.simpleName}: ${e.message}")
             null
         }
     }
