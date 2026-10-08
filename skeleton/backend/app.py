@@ -25,6 +25,7 @@ app = FastAPI(title="Rejoin Walking Skeleton")
 DEVICES: dict[str, dict] = {}   # device_id -> state
 TOKENS: dict[str, str] = {}     # device_token -> device_id
 CODES: dict[str, str] = {}      # device_code -> device_id
+EVENTS: list[dict] = []         # เหตุการณ์ (rejoin/alert/arm)
 
 SILENCE_THRESHOLD = 60          # วินาที
 
@@ -47,6 +48,11 @@ class HeartbeatIn(BaseModel):
     rejoin_count: int = 0
     session_start: Optional[int] = None
     ts: Optional[int] = None
+
+
+class EventIn(BaseModel):
+    type: str
+    detail: Optional[dict] = None
 
 
 def _now() -> int:
@@ -132,6 +138,27 @@ def list_devices():
     return {"devices": out}
 
 
+@app.post("/api/agent/event")
+def agent_event(body: EventIn, authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "missing bearer token")
+    token = authorization.split(" ", 1)[1]
+    device_id = TOKENS.get(token)
+    if not device_id:
+        raise HTTPException(401, "invalid token")
+    ev = {"device_id": device_id, "type": body.type,
+          "detail": body.detail or {}, "ts": _now()}
+    EVENTS.append(ev)
+    if body.type == "rejoin":
+        DEVICES[device_id]["rejoin_count"] = DEVICES[device_id].get("rejoin_count", 0) + 1
+    return {"ok": True}
+
+
+@app.get("/api/me/events")
+def list_events(limit: int = 20):
+    return {"events": EVENTS[-limit:][::-1]}
+
+
 @app.post("/api/device/{device_id}/arm")
 def arm(device_id: str):
     if device_id not in DEVICES:
@@ -146,6 +173,11 @@ def disarm(device_id: str):
         raise HTTPException(404, "no device")
     DEVICES[device_id]["_pending_disarm"] = True
     return {"ok": True, "queued": "disarm"}
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "devices": len(DEVICES), "events": len(EVENTS)}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -167,16 +199,24 @@ def dashboard():
           <td>{age}s</td>
           <td>{d.get('rejoin_count', 0)}</td>
         </tr>"""
+    ev_rows = ""
+    for e in EVENTS[-15:][::-1]:
+        ev_rows += (f"<tr><td>{e['ts']}</td><td>{e['type']}</td>"
+                    f"<td>{e['device_id']}</td><td>{e['detail']}</td></tr>")
+    events_html = f"""<h2>Events (ล่าสุด)</h2>
+    <table><tr><th>ts</th><th>type</th><th>device</th><th>detail</th></tr>
+    {ev_rows or '<tr><td colspan="4">ยังไม่มี event</td></tr>'}</table>"""
     html = f"""<!doctype html><html><head><meta charset="utf-8">
     <meta http-equiv="refresh" content="3">
     <title>Rejoin Skeleton</title>
     <style>body{{font-family:monospace;background:#0f172a;color:#e2e8f0;padding:20px}}
     table{{border-collapse:collapse;width:100%}} td,th{{border:1px solid #334155;padding:6px 10px;text-align:left}}
-    th{{background:#1e293b}} h1{{color:#38bdf8}}</style></head>
+    th{{background:#1e293b}} h1{{color:#38bdf8}} h2{{color:#38bdf8;margin-top:30px}}</style></head>
     <body><h1>Rejoin — Walking Skeleton</h1>
     <p>dead-man's switch ฝั่งเว็บ: ไม่ได้ยิน heartbeat > 30s = offline</p>
     <table><tr><th>device</th><th>status</th><th>game</th><th>lua</th><th>avatar</th>
     <th>character</th><th>map</th><th>last_seen</th><th>rejoin</th></tr>
     {rows or '<tr><td colspan="9">ยังไม่มีเครื่อง</td></tr>'}</table>
+    {events_html}
     </body></html>"""
     return HTMLResponse(html)
