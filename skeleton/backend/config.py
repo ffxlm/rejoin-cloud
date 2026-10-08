@@ -62,6 +62,9 @@ class Settings:
     heartbeat_interval_sec: int = 15
     last_seen_ttl_sec: int = 120
 
+    # ---- ตัวรัน (Runner) — ลิงก์ไปหน้าระบบบายพาส (ยังไม่ทำ) ----
+    runner_url: str = ""  # ว่าง = ยังไม่เปิดใช้งาน (หน้า /bypass จะโชว์ "กำลังพัฒนา")
+
     # ---- ที่เก็บไฟล์ให้ดาวน์โหลด ----
     lua_dir: str = "skeleton/lua"
     apk_path: str = ""  # ว่าง = ยังไม่มี APK
@@ -85,6 +88,7 @@ class Settings:
             silence_sec=_env_int("SILENCE_SEC", cls.silence_sec),
             heartbeat_interval_sec=_env_int("HEARTBEAT_INTERVAL_SEC", cls.heartbeat_interval_sec),
             last_seen_ttl_sec=_env_int("LAST_SEEN_TTL_SEC", cls.last_seen_ttl_sec),
+            runner_url=os.getenv("RUNNER_URL", cls.runner_url),
             lua_dir=os.getenv("LUA_DIR", cls.lua_dir),
             apk_path=os.getenv("APK_PATH", cls.apk_path),
             screenshot_dir=os.getenv("SCREENSHOT_DIR", cls.screenshot_dir),

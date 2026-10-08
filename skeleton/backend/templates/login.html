@@ -4,53 +4,63 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#08090a">
+<meta name="theme-color" content="#090909">
 <title>Rejoin — เข้าสู่ระบบ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
   :root{
-    --bg:#08090a; --bg-2:#0f1011; --elev:#16171a;
-    --hover:rgba(255,255,255,.045); --border:#23252a; --border-2:#2c2e33;
-    --text:#f7f8f8; --text-2:#d0d6e0; --muted:#8a8f98; --dim:#62666d;
-    --accent:#5e6ad2; --accent-h:#6e79dd; --green:#4cb782; --amber:#f2c94c;
+    --bg:#090909; --bg-2:#121212; --elev:#1c1c1c;
+    --hover:rgba(255,255,255,.045); --border:#292929; --border-2:#404040;
+    --text:#f5f5f5; --text-2:#d4d4d4; --muted:#a3a3a3; --dim:#929292;
+    --accent:#d4d4d4; --accent-h:#ffffff; --green:#4cb782; --amber:#f2c94c;
   }
   body{
     margin:0;min-height:100vh;color:var(--text);font-size:14px;letter-spacing:-.006em;
-    font-family:"Inter",system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
+    font-family:"Inter","Noto Sans Thai",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;padding:24px;
-    background:radial-gradient(680px 320px at 50% -80px, rgba(94,106,210,.13), transparent 70%) no-repeat var(--bg);
+    background:radial-gradient(800px 600px at 20% 20%,rgba(255,255,255,.045),transparent 70%),var(--bg);
     background-attachment:fixed;
   }
   .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;
       stroke-linejoin:round;vertical-align:-.14em;flex:none}
   .ic.fill{fill:currentColor;stroke:none}
 
-  .card{width:100%;max-width:400px;background:var(--bg-2);border:1px solid var(--border);
-        border-radius:14px;padding:32px;box-shadow:0 30px 70px -40px rgba(0,0,0,.9);animation:pop .35s ease}
+  .login-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);align-items:center;gap:80px;width:100%;max-width:1050px}
+  .intro{min-width:0}
+  .brand{display:flex;align-items:center;gap:12px;font-size:23px;font-weight:700;letter-spacing:-.04em;margin-bottom:60px}
+  .brand .logo{margin:0;width:38px;height:38px}
+  .eyebrow{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.16em;margin-bottom:18px}
+  .intro h2{font-size:clamp(32px,4vw,50px);line-height:1.35;letter-spacing:-.045em;margin:0 0 22px;font-weight:700}
+  .intro h2 span{color:var(--muted)}
+  .intro p{font-size:15px;color:var(--muted);line-height:1.9;max-width:420px;margin:0}
+  .intro-note{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:12px;margin-top:30px}
+  .intro-note .ic{color:#70dcb0;width:16px;height:16px}
+  .card{width:100%;background:linear-gradient(145deg,rgba(255,255,255,.025),transparent),var(--bg-2);border:1px solid var(--border-2);
+        border-radius:24px;padding:36px;box-shadow:0 30px 80px -30px rgba(0,0,0,.6);animation:pop .35s ease}
   @keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
   .logo{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;color:#fff;
-        background:linear-gradient(135deg,#5e6ad2,#8b7ff0);margin-bottom:18px;
+        background:linear-gradient(135deg,#404040,#202020);margin-bottom:18px;
         box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18)}
   .logo .ic{width:22px;height:22px}
-  h1{margin:0 0 6px;font-size:19px;font-weight:600;letter-spacing:-.01em}
+  h1{margin:0 0 10px;font-size:25px;font-weight:700;letter-spacing:-.03em}
   .sub{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 22px}
 
   ul{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:11px}
-  li{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--text-2)}
+  li{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--text-2);line-height:1.7}
   li .icw{width:26px;height:26px;border-radius:7px;flex:none;display:grid;place-items:center;
           color:var(--muted);background:var(--hover);border:1px solid var(--border)}
   li .icw .ic{width:14px;height:14px}
 
-  a.btn{display:flex;align-items:center;justify-content:center;gap:9px;height:38px;padding:0 16px;
+  a.btn{display:flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:12px 16px;
         border-radius:9px;font-size:13.5px;font-weight:500;text-decoration:none;
         transition:background .12s,border-color .12s,color .12s}
   a.btn:active{transform:translateY(.5px)}
-  a.discord{background:#5865F2;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
-  a.discord:hover{background:#6b76f3}
+  a.discord{background:#ededed;color:#111;box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
+  a.discord:hover{background:#fff}
   a.discord .ic{width:18px;height:18px}
   a.dev{margin-top:9px;background:var(--hover);color:var(--text-2);border:1px solid var(--border);font-size:13px}
   a.dev:hover{background:rgba(255,255,255,.075);color:var(--text)}
@@ -60,13 +70,33 @@
         padding:11px 13px;margin-bottom:12px}
   .warn .ic{width:15px;height:15px;margin-top:1px;color:var(--amber)}
   .foot{margin-top:20px;font-size:11.5px;color:var(--dim);text-align:center}
+  a:focus-visible{outline:2px solid var(--accent-h);outline-offset:4px}
+  @media(max-width:900px){.login-layout{gap:32px}.card{padding:28px}.brand{margin-bottom:36px}}
+  @media(max-width:700px){
+    body{padding:28px 16px;min-height:100svh}
+    .login-layout{grid-template-columns:minmax(0,1fr);max-width:440px;gap:28px}
+    .brand{margin-bottom:28px}
+    .intro h2{font-size:32px;margin-bottom:12px}
+    .intro p{font-size:13px}
+    .intro-note{display:none}
+    .card{padding:26px 22px;border-radius:20px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<main class="login-layout">
+  <section class="intro" aria-label="เกี่ยวกับ Rejoin">
+    <div class="brand"><span class="logo"><svg class="ic"><use href="#i-refresh"/></svg></span>Rejoin</div>
+    <div class="eyebrow">YOUR GAME, ALWAYS ON</div>
+    <h2>เกมหลุด ไม่สะดุด<br><span>ให้เราเฝ้าแทนคุณ</span></h2>
+    <p>จัดการคลาวโฟนทุกเครื่องได้ในที่เดียว ตรวจสอบสถานะและกู้เกมอัตโนมัติ ไม่ว่าคุณจะอยู่ที่ไหน</p>
+    <div class="intro-note"><svg class="ic"><use href="#i-monitor"/></svg>เข้าถึงได้ทั้งมือถือ แท็บเล็ต และคอมพิวเตอร์</div>
+  </section>
   <div class="card">
     <div class="logo"><svg class="ic" style="width:22px;height:22px;stroke-width:2.3"><use href="#i-refresh"/></svg></div>
-    <h1>Rejoin</h1>
-    <p class="sub">ปล่อยบอทไว้ได้ ไม่ต้องเฝ้า — เกมหลุดแล้วระบบกู้ให้เองอัตโนมัติ</p>
+    <h1>ยินดีต้อนรับกลับ</h1>
+    <p class="sub">เข้าสู่ระบบเพื่อเริ่มดูแลเกมของคุณ</p>
 
     <ul>
       <li>
@@ -103,6 +133,7 @@
 
     <div class="foot">เข้าสู่ระบบปลอดภัยด้วย Discord OAuth2</div>
   </div>
+</main>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
     <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>

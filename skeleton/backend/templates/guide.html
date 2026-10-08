@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}วิธีใช้งาน — Rejoin{% endblock %}
+{% block mobiletitle %}วิธีใช้งาน{% endblock %}
+
+{% block head %}
+  .hero{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .hero-ic{width:46px;height:46px;flex:none;border-radius:13px;display:grid;place-items:center;color:#fff;
+           background:linear-gradient(135deg,#404040,#202020);
+           box-shadow:0 12px 28px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.2)}
+  .hero-ic .ic{width:23px;height:23px}
+  .hero h1{margin:0 0 6px;font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.03em}
+  .hero p{margin:0;font-size:13px;color:var(--muted)}
+
+  .need{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+  .need span{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);
+             background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+  .need span .ic{width:14px;height:14px;color:var(--dim)}
+
+  /* ---------- vertical stepper ---------- */
+  .steps-v{position:relative;display:flex;flex-direction:column;gap:14px;margin-bottom:28px}
+  .step-v{position:relative;display:flex;gap:15px;border:1px solid var(--border);border-radius:12px;
+          background:var(--bg-2);padding:17px 18px;transition:border-color .15s}
+  .step-v:hover{border-color:var(--border-2)}
+  .step-v .no{width:30px;height:30px;flex:none;border-radius:9px;display:grid;place-items:center;
+              font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#404040,#202020);
+              box-shadow:0 6px 16px -8px rgba(0,0,0,.9)}
+  .step-v .body{min-width:0;flex:1}
+  .step-v h3{margin:3px 0 5px;font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+  .step-v p{margin:0 0 8px;font-size:13px;color:var(--text-2);line-height:1.65}
+  .step-v p:last-child{margin-bottom:0}
+  .step-v .sub{font-size:12.5px;color:var(--muted);line-height:1.6}
+
+  ul.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  ul.ticks li{display:flex;gap:9px;align-items:flex-start;font-size:12.8px;color:var(--text-2);line-height:1.6}
+  ul.ticks li .ic{width:15px;height:15px;margin-top:2px;color:var(--green);flex:none}
+  ul.ticks li.warn .ic{color:var(--amber)}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--text);
+       background:var(--hover);border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+
+  .tip{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.6;
+       border-radius:9px;padding:11px 13px;margin-top:11px}
+  .tip .ic{width:15px;height:15px;margin-top:1px;flex:none}
+  .tip.info{color:#9db8dd;background:rgba(78,167,252,.08);border:1px solid rgba(78,167,252,.2)}
+  .tip.info .ic{color:var(--blue)}
+
+  /* ---------- buttons reference ---------- */
+  .refs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:28px}
+  .ref{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:11px;
+       background:var(--bg-2);padding:13px 15px}
+  .ref .bic{width:34px;height:34px;flex:none;border-radius:9px;display:grid;place-items:center}
+  .ref .bic .ic{width:16px;height:16px}
+  .ref .bic.play{color:#5fc99a;background:rgba(76,183,130,.12)}
+  .ref .bic.zap{color:#e6c356;background:rgba(242,201,76,.12)}
+  .ref .bic.cam{color:#7fb8f0;background:rgba(78,167,252,.12)}
+  .ref .bic.del{color:#ef7a7a;background:rgba(235,87,87,.1)}
+  .ref b{display:block;font-size:13px;font-weight:600;margin-bottom:2px}
+  .ref span{font-size:12px;color:var(--muted);line-height:1.5}
+
+  h2.sec{display:flex;align-items:center;gap:9px;margin:0 0 14px;font-size:14px;font-weight:600}
+  h2.sec .ic{width:16px;height:16px;color:var(--dim)}
+
+  table.probs{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:12px;
+              overflow:hidden;font-size:12.5px}
+  table.probs th,table.probs td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border)}
+  table.probs tr:last-child td{border-bottom:0}
+  table.probs th{background:var(--bg-2);color:var(--muted);font-weight:600;font-size:11px;
+                 letter-spacing:.03em;text-transform:uppercase}
+  table.probs td{color:var(--text-2);vertical-align:top;line-height:1.55}
+  table.probs td:first-child{color:var(--text);white-space:nowrap}
+  table.probs tr:hover td{background:var(--hover)}
+
+  @media(max-width:820px){ .refs{grid-template-columns:1fr} }
+  @media(max-width:560px){
+    table.probs{table-layout:fixed}
+    table.probs th,table.probs td{padding:10px;overflow-wrap:anywhere}
+    table.probs td:first-child{white-space:normal}
+    .step-v{padding:16px 14px;gap:10px}
+    ul.ticks li{display:block}
+    ul.ticks li .ic{margin-right:6px}
+    code{overflow-wrap:anywhere}
+  }
+{% endblock %}
+
+{% block content %}
+
+<div class="hero">
+  <div class="hero-ic"><svg class="ic"><use href="#i-book"/></svg></div>
+  <div>
+    <h1>วิธีใช้งาน</h1>
+    <p>ตั้งค่าครั้งเดียว แล้วปล่อยให้ระบบกู้เกมให้เอง</p>
+  </div>
+</div>
+
+<div class="need">
+  <span><svg class="ic"><use href="#i-smartphone"/></svg>เครื่อง Android ที่ root (Magisk)</span>
+  <span><svg class="ic"><use href="#i-gamepad"/></svg>เกม Delta (com.roblox.client)</span>
+  <span><svg class="ic"><use href="#i-user"/></svg>บัญชีในเว็บนี้</span>
+</div>
+
+<div class="steps-v">
+  <div class="step-v">
+    <span class="no">1</span>
+    <div class="body">
+      <h3>เพิ่มเครื่องในแดชบอร์ด</h3>
+      <p>ไปที่หน้า <a href="/">แดชบอร์ด</a> กด <b>“เพิ่มเครื่อง”</b> แล้วตั้งชื่อเพื่อแยกแยะ (เช่น “ไอดีหลัก”)</p>
+      <ul class="ticks">
+        <li><svg class="ic"><use href="#i-check"/></svg>ระบบจะออก <b>รหัสเครื่อง</b> รูปแบบ <code>RJ-XXXXX-XXXXX</code></li>
+        <li class="warn"><svg class="ic"><use href="#i-alert"/></svg><b>รหัสแสดงครั้งเดียว</b> — จดหรือคัดลอกเก็บไว้ทันที</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step-v">
+    <span class="no">2</span>
+    <div class="body">
+      <h3>กรอกรหัสในแอป Rejoin (บนคลาวโฟน)</h3>
+      <p>เปิดแอป Rejoin บนเครื่อง แล้วกรอก:</p>
+      <ul class="ticks">
+        <li><svg class="ic"><use href="#i-check"/></svg><b>รหัสเครื่อง</b> ที่ได้จากข้อ 1</li>
+        <li><svg class="ic"><use href="#i-check"/></svg><b>ที่อยู่เซิร์ฟเวอร์</b> ให้ตรงกับเว็บนี้</li>
+        <li><svg class="ic"><use href="#i-check"/></svg><b>Place ID</b> ของเกมที่ต้องการกู้</li>
+      </ul>
+      <p class="sub">แอปจะลงทะเบียนกับเว็บ แล้วติดตั้งสคริปต์ Lua ลง Delta ให้เองอัตโนมัติ</p>
+    </div>
+  </div>
+
+  <div class="step-v">
+    <span class="no">3</span>
+    <div class="body">
+      <h3>เริ่มเฝ้าเกม (arm)</h3>
+      <p>กด <b>“เริ่มเฝ้าเกม”</b> ในการ์ดเครื่อง รอจนสถานะเปลี่ยนเป็น <b>พร้อมใช้งาน</b> → <b>กำลังเฝ้าเกม</b></p>
+      <div class="tip info">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <span>เน็ตคลาวโฟนช้า — เกมอาจโหลดได้ถึง ~3 นาที สถานะจะขึ้น <b>กำลังกู้เกม</b> ระหว่างนั้น เป็นเรื่องปกติ</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-v">
+    <span class="no">4</span>
+    <div class="body">
+      <h3>ปล่อยไว้ได้เลย</h3>
+      <p>จากนี้ถ้าเกมหลุด/ค้าง ระบบจะตรวจจับ → ปิดเก่า → เปิดใหม่ → กลับมาเฝ้าอีกครั้งให้เอง</p>
+      <ul class="ticks">
+        <li><svg class="ic"><use href="#i-check"/></svg>ดูสถานะ/ประวัติ/ภาพหน้าจอได้ตลอดจากแดชบอร์ด (อัปเดตทุก 10 วิ)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2 class="sec"><svg class="ic"><use href="#i-shield"/></svg>ปุ่มบนแดชบอร์ด</h2>
+<div class="refs">
+  <div class="ref">
+    <span class="bic play"><svg class="ic"><use href="#i-play"/></svg></span>
+    <div><b>เริ่ม / หยุดเฝ้าเกม</b><span>เปิด–ปิดการกู้เกมอัตโนมัติ</span></div>
+  </div>
+  <div class="ref">
+    <span class="bic zap"><svg class="ic"><use href="#i-zap"/></svg></span>
+    <div><b>กู้เกมทันที</b><span>สั่งเปิดเกมใหม่เดี๋ยวนี้ ไม่รอตรวจจับ</span></div>
+  </div>
+  <div class="ref">
+    <span class="bic cam"><svg class="ic"><use href="#i-camera"/></svg></span>
+    <div><b>แคปภาพ</b><span>ขอภาพหน้าจอจากเครื่อง (เก็บ 7 วัน)</span></div>
+  </div>
+  <div class="ref">
+    <span class="bic del"><svg class="ic"><use href="#i-trash"/></svg></span>
+    <div><b>ลบเครื่อง</b><span>ยกเลิกรหัสเครื่องนี้ถาวร</span></div>
+  </div>
+</div>
+
+<h2 class="sec"><svg class="ic"><use href="#i-alert"/></svg>แก้ปัญหาเบื้องต้น</h2>
+<table class="probs">
+  <thead><tr><th>อาการ</th><th>วิธีแก้</th></tr></thead>
+  <tbody>
+    <tr><td>ลงทะเบียนไม่สำเร็จ</td><td>รหัสเครื่องผิดหรือถูกยกเลิก — สร้างเครื่องใหม่ในแดชบอร์ด</td></tr>
+    <tr><td>สถานะออฟไลน์ตลอด</td><td>แอปไม่ได้รัน หรือตั้งค่าเซิร์ฟเวอร์ผิด — เช็คว่าแอปยังทำงานอยู่</td></tr>
+    <tr><td>เกมหลุดแล้วไม่กู้</td><td>ยังไม่ได้กด “เริ่มเฝ้าเกม” หรือเกมโหลดนานกว่าเวลาที่ตั้งไว้</td></tr>
+    <tr><td>ค้างที่ “กำลังกู้เกม” นาน</td><td>เน็ตช้า/เกมโหลดช้า — รอได้ถึง ~3 นาที ถ้านานกว่านั้นระบบจะแจ้งเตือน</td></tr>
+    <tr><td>ไม่เห็นภาพหน้าจอ</td><td>กด “แคปภาพ” แล้วรอ 2–5 วินาที (บางเครื่องแคปช้ากว่า)</td></tr>
+  </tbody>
+</table>
+
+{% endblock %}

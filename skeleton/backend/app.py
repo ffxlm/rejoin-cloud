@@ -85,6 +85,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         name="screenshots",
     )
 
+    def _login_response(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {"discord_enabled": settings.discord_enabled, "dev_auth": settings.dev_auth},
+        )
+
+    async def _current_user(request: Request, db: AsyncSession) -> User | None:
+        uid = request.session.get("user_id")
+        if not uid:
+            return None
+        user = await db.get(User, uid)
+        if user is None:
+            request.session.clear()
+            return None
+        return user
+
     @app.get("/health")
     async def health(store: Store = Depends(get_store)):
         return {"ok": True, "redis": await store.ping(), "db": settings.database_url.split("://")[0]}
@@ -95,24 +112,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         db: AsyncSession = Depends(get_db),
         store: Store = Depends(get_store),
     ):
-        uid = request.session.get("user_id")
-        if not uid:
-            return templates.TemplateResponse(
-                request,
-                "login.html",
-                {
-                    "discord_enabled": settings.discord_enabled,
-                    "dev_auth": settings.dev_auth,
-                },
-            )
-        user = await db.get(User, uid)
+        user = await _current_user(request, db)
         if user is None:
-            request.session.clear()
-            return templates.TemplateResponse(
-                request,
-                "login.html",
-                {"discord_enabled": settings.discord_enabled, "dev_auth": settings.dev_auth},
-            )
+            return _login_response(request)
 
         devices = (
             await db.execute(select(Device).where(Device.user_id == user.id).order_by(Device.id))
@@ -208,6 +210,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "dashboard.html",
             {
                 "user": user_public(user),
+                "active": "dashboard",
                 "devices": views,
                 "panels": panels,
                 "armed_count": armed_count,
@@ -215,6 +218,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "total_rejoins": total_rejoins,
                 "discord_enabled": settings.discord_enabled,
                 "dev_auth": settings.dev_auth,
+            },
+        )
+
+    @app.get("/guide", response_class=HTMLResponse)
+    async def guide(request: Request, db: AsyncSession = Depends(get_db)):
+        user = await _current_user(request, db)
+        if user is None:
+            return _login_response(request)
+        return templates.TemplateResponse(
+            request,
+            "guide.html",
+            {"user": user_public(user), "active": "guide"},
+        )
+
+    @app.get("/bypass", response_class=HTMLResponse)
+    async def bypass(request: Request, db: AsyncSession = Depends(get_db)):
+        user = await _current_user(request, db)
+        if user is None:
+            return _login_response(request)
+        return templates.TemplateResponse(
+            request,
+            "bypass.html",
+            {
+                "user": user_public(user),
+                "active": "bypass",
+                "runner_url": settings.runner_url,
             },
         )
 

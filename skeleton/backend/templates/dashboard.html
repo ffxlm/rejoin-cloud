@@ -1,139 +1,46 @@
-<!doctype html>
-<html lang="th">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#08090a">
-<title>Rejoin — ระบบกู้เกมอัตโนมัติ</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  *{box-sizing:border-box}
-  :root{
-    --bg:#08090a; --bg-2:#0f1011; --bg-3:#141516; --elev:#16171a;
-    --hover:rgba(255,255,255,.045); --hover-2:rgba(255,255,255,.075);
-    --border:#23252a; --border-2:#2c2e33; --border-3:#3c3f44;
-    --text:#f7f8f8; --text-2:#d0d6e0; --muted:#8a8f98; --dim:#62666d;
-    --accent:#5e6ad2; --accent-h:#6e79dd;
-    --green:#4cb782; --amber:#f2c94c; --red:#eb5757; --blue:#4ea7fc;
-  }
-  html{background:var(--bg)}
-  body{
-    margin:0; color:var(--text); font-size:14px; line-height:1.5; letter-spacing:-.006em;
-    font-family:"Inter",system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    background:radial-gradient(720px 240px at 50% -60px, rgba(94,106,210,.10), transparent 70%) no-repeat var(--bg);
-    background-attachment:fixed;
-  }
-  a{color:var(--accent);text-decoration:none}
-  ::selection{background:rgba(94,106,210,.4);color:#fff}
+{% extends "base.html" %}
+{% block title %}แดชบอร์ด — Rejoin{% endblock %}
+{% block mobiletitle %}แดชบอร์ด{% endblock %}
 
-  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;
-      stroke-linejoin:round;vertical-align:-.14em;flex:none}
-  .ic.fill{fill:currentColor;stroke:none}
-
-  /* ---------- top bar ---------- */
-  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
-          gap:14px;height:52px;padding:0 20px;background:rgba(8,9,10,.72);
-          backdrop-filter:blur(12px) saturate(180%);border-bottom:1px solid var(--border)}
-  .brand{display:flex;align-items:center;gap:9px;min-width:0}
-  .logo{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:#fff;flex:none;
-        background:linear-gradient(135deg,#5e6ad2,#8b7ff0);
-        box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18)}
-  .logo .ic{width:15px;height:15px}
-  .brand b{font-size:14px;font-weight:600;letter-spacing:-.01em}
-  .brand .sub{font-size:12px;color:var(--dim);padding-left:10px;margin-left:2px;border-left:1px solid var(--border-2)}
-  .top-right{display:flex;align-items:center;gap:8px}
-  .uchip{display:flex;align-items:center;gap:8px;height:32px;padding:0 4px}
-  .uchip .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;
-             font-size:11px;font-weight:600;color:#fff;background:linear-gradient(135deg,#5e6ad2,#8b7ff0)}
-  .uchip .nm{font-size:13px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-  /* ---------- layout ---------- */
-  .wrap{max-width:1000px;margin:0 auto;padding:26px 20px 90px}
-
+{% block head %}
   /* ---------- stat strip ---------- */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);
-         border-radius:12px;background:var(--bg-2);overflow:hidden;margin-bottom:22px}
-  .stat{padding:15px 18px;border-right:1px solid var(--border)}
-  .stat:last-child{border-right:0}
-  .stat .l{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:9px}
-  .stat .l .ic{width:13px;height:13px;color:var(--dim)}
-  .stat .n{font-size:23px;font-weight:600;letter-spacing:-.02em;line-height:1}
-
-  /* ---------- steps ---------- */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);
-         border-radius:12px;background:var(--bg-2);overflow:hidden;margin-bottom:22px}
-  .step{display:flex;gap:11px;padding:14px 16px;border-right:1px solid var(--border)}
-  .step:last-child{border-right:0}
-  .step .num{width:20px;height:20px;flex:none;border-radius:6px;display:grid;place-items:center;
-             font-size:11px;font-weight:600;color:var(--muted);background:var(--hover);border:1px solid var(--border)}
-  .step b{display:block;font-size:12.5px;font-weight:500;color:var(--text-2);margin-bottom:2px}
-  .step span{font-size:12px;color:var(--dim);line-height:1.45}
-
-  /* ---------- section head ---------- */
-  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
-  .sec-head h2{margin:0;font-size:13px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px}
-  .sec-head h2 .ic{width:15px;height:15px;color:var(--dim)}
-  .count{font-size:11px;font-weight:500;color:var(--dim);background:var(--hover);
-         border:1px solid var(--border);border-radius:6px;padding:1px 6px}
-
-  /* ---------- buttons ---------- */
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;
-       border-radius:8px;border:1px solid transparent;font:inherit;font-size:13px;font-weight:500;
-       cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
-  .btn .ic{width:15px;height:15px}
-  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(94,106,210,.35)}
-  .btn:active{transform:translateY(.5px)}
-  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
-  .btn.primary:hover{background:var(--accent-h)}
-  .btn.default{background:var(--hover);color:var(--text-2);border-color:var(--border)}
-  .btn.default:hover{background:var(--hover-2);color:var(--text);border-color:var(--border-2)}
-  .btn.ghost{background:transparent;color:var(--muted)}
-  .btn.ghost:hover{background:var(--hover);color:var(--text)}
-  .btn.success{background:rgba(76,183,130,.12);color:#5fc99a;border-color:rgba(76,183,130,.28)}
-  .btn.success:hover{background:rgba(76,183,130,.18)}
-  .btn.danger{background:rgba(235,87,87,.1);color:#ef7a7a;border-color:rgba(235,87,87,.26)}
-  .btn.danger:hover{background:rgba(235,87,87,.16)}
-  .btn.icon{width:32px;padding:0}
-  .btn[disabled]{opacity:.5;cursor:not-allowed}
-  .btn.loading{pointer-events:none;opacity:.6}
+  .dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:28px}
+  .eyebrow{font-size:10px;letter-spacing:.18em;font-weight:600;color:var(--accent-h);margin-bottom:10px}
+  .dashboard-head .page-head{margin:0}
+  .live-note{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:11px;white-space:nowrap;background:var(--bg-2)}
+  .live-note .dot{background:var(--green)}
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:32px}
+  .stat{position:relative;padding:20px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.025),transparent),var(--bg-2);overflow:hidden}
+  .stat .l{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:18px}
+  .stat .l .ic{width:16px;height:16px;color:var(--accent-h)}
+  .stat .n{font-size:32px;font-weight:700;letter-spacing:-.04em;line-height:1.2;font-variant-numeric:tabular-nums}
+  .stat:nth-child(2) .n,.stat:nth-child(2) .ic{color:#70dcb0}
+  .stat:nth-child(3) .n,.stat:nth-child(3) .ic{color:#f3af7d}
+  .stat:nth-child(4) .n,.stat:nth-child(4) .ic{color:#91bfff}
 
   /* ---------- device card ---------- */
-  .device{border:1px solid var(--border);border-radius:12px;background:var(--bg-2);
-          margin-bottom:14px;transition:border-color .15s}
+  .device{border:1px solid var(--border);border-radius:18px;background:var(--bg-2);
+          margin-bottom:20px;box-shadow:0 8px 32px -20px rgba(0,0,0,.6);transition:border-color .15s}
   .device:hover{border-color:var(--border-2)}
-  .dev-body{padding:16px 18px}
+  .dev-body{padding:24px}
   .dev-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .dev-top>div{min-width:0;flex:1 1 220px}
   .dev-name{display:flex;align-items:center;gap:9px;min-width:0}
   .dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--dim)}
   .dot.armed{background:var(--green);box-shadow:0 0 0 3px rgba(76,183,130,.15)}
-  .dot.rejoining{background:var(--accent);box-shadow:0 0 0 3px rgba(94,106,210,.18);animation:pulse 1.2s infinite}
+  .dot.rejoining{background:var(--accent);box-shadow:0 0 0 3px rgba(255,255,255,.12);animation:pulse 1.2s infinite}
   .dot.alert{background:var(--red);box-shadow:0 0 0 3px rgba(235,87,87,.15)}
   .dot.lua_active,.dot.game_running{background:var(--amber);box-shadow:0 0 0 3px rgba(242,201,76,.14)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   .dev-name h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em;
                overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .dev-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);
+  .dev-id{flex:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--dim);
           background:var(--hover);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
   .dev-sub{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:6px}
   .dev-sub .ic{width:12px;height:12px;vertical-align:-.14em;margin-right:4px}
 
-  .badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:7px;
-         font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent}
-  .badge .ic{width:13px;height:13px}
-  .b-armed{color:#5fc99a;background:rgba(76,183,130,.1);border-color:rgba(76,183,130,.22)}
-  .b-ready{color:#e6c356;background:rgba(242,201,76,.1);border-color:rgba(242,201,76,.22)}
-  .b-rejoin{color:#8b93e8;background:rgba(94,106,210,.14);border-color:rgba(94,106,210,.3)}
-  .b-alert{color:#ef7a7a;background:rgba(235,87,87,.1);border-color:rgba(235,87,87,.24)}
-  .b-game{color:#e6c356;background:rgba(242,201,76,.08);border-color:rgba(242,201,76,.2)}
-  .b-offline{color:var(--muted);background:var(--hover);border-color:var(--border)}
-  .b-conn{color:#7fb8f0;background:rgba(78,167,252,.1);border-color:rgba(78,167,252,.22)}
-
-  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:15px 0;
-        margin-top:15px;border-top:1px solid var(--border)}
+  .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:18px;
+        margin:20px 0;background:var(--bg);border:1px solid var(--border);border-radius:12px}
   .mi{min-width:0}
   .mi .k{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:5px;margin-bottom:4px}
   .mi .k .ic{width:12px;height:12px}
@@ -150,7 +57,8 @@
        font-weight:500;cursor:pointer;margin-bottom:-1px}
   .tab .ic{width:14px;height:14px}
   .tab:hover{color:var(--text-2)}
-  .tab.active{color:var(--text);border-bottom-color:var(--text)}
+  .tab.active{color:var(--accent-h);border-bottom-color:var(--accent)}
+  .tab{min-height:44px}
   .tab .pill{font-size:10.5px;color:var(--dim);background:var(--hover);border:1px solid var(--border);border-radius:5px;padding:0 5px}
   .pane{padding-top:14px}
   .pane[hidden]{display:none}
@@ -163,7 +71,7 @@
   .shot:hover img{opacity:.88}
   .shot .cap{display:flex;align-items:center;justify-content:space-between;gap:6px;
              padding:6px 8px;font-size:11px;color:var(--dim)}
-  .shot .del{display:grid;place-items:center;width:20px;height:20px;border-radius:5px;
+  .shot .del{display:grid;place-items:center;width:32px;height:32px;border-radius:5px;
              border:0;background:transparent;color:var(--dim);cursor:pointer}
   .shot .del:hover{background:rgba(235,87,87,.12);color:#ef7a7a}
   .shot .del .ic{width:12px;height:12px}
@@ -178,105 +86,43 @@
   .evic .ic{width:14px;height:14px}
   .ev-rejoin .evic{color:#5fc99a;background:rgba(76,183,130,.1)}
   .ev-alert .evic{color:#ef7a7a;background:rgba(235,87,87,.1)}
-  .ev-arm .evic{color:#8b93e8;background:rgba(94,106,210,.12)}
+  .ev-arm .evic{color:var(--text-2);background:rgba(255,255,255,.08)}
   .ev-disarm .evic{color:var(--muted);background:var(--hover)}
   .ev-rejoin_now .evic{color:#e6c356;background:rgba(242,201,76,.1)}
   .ev-screenshot_now .evic{color:#7fb8f0;background:rgba(78,167,252,.1)}
   .evtxt{flex:1;min-width:0;font-size:13px;color:var(--text-2)}
   .evtime{font-size:11.5px;color:var(--dim);white-space:nowrap}
 
-  .none{display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px 16px;text-align:center;
-        font-size:12.5px;color:var(--dim);border:1px dashed var(--border-2);border-radius:9px}
-  .none .ic{width:20px;height:20px;color:var(--border-3)}
-
-  /* ---------- empty ---------- */
-  .empty{display:flex;flex-direction:column;align-items:center;text-align:center;
-         padding:56px 20px;border:1px dashed var(--border-2);border-radius:12px}
-  .empty .big{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:var(--muted);
-              background:var(--hover);border:1px solid var(--border);margin-bottom:14px}
-  .empty h2{margin:0 0 5px;font-size:15px;font-weight:600}
-  .empty p{margin:0 0 18px;font-size:13px;color:var(--muted);max-width:360px}
-
-  /* ---------- modal ---------- */
-  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
-         padding:20px;background:rgba(3,4,5,.6);backdrop-filter:blur(3px)}
-  .modal.open{display:flex;animation:fade .14s ease}
-  @keyframes fade{from{opacity:0}to{opacity:1}}
-  .modal-card{width:100%;max-width:420px;background:var(--elev);border:1px solid var(--border-2);
-              border-radius:12px;padding:22px;box-shadow:0 24px 60px -20px rgba(0,0,0,.75);animation:pop .16s ease}
-  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  .modal-card h3{margin:0 0 5px;font-size:15px;font-weight:600}
-  .modal-card p{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.55}
-  .modal-ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;margin-bottom:14px}
-  .modal-ic.ok{color:#5fc99a;background:rgba(76,183,130,.12);border:1px solid rgba(76,183,130,.24)}
-  .modal-ic.warn{color:#ef7a7a;background:rgba(235,87,87,.12);border:1px solid rgba(235,87,87,.24)}
-  .modal-ic .ic{width:20px;height:20px}
-  .modal-card label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px}
-  input[type=text]{width:100%;height:36px;background:var(--bg);border:1px solid var(--border-2);color:var(--text);
-                   border-radius:8px;padding:0 12px;font:inherit;font-size:14px}
-  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(94,106,210,.3)}
-  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
-  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:600;letter-spacing:1.5px;
-        color:var(--text);background:var(--bg);border:1px solid var(--border-2);border-radius:9px;
-        padding:16px;text-align:center;word-break:break-all;margin:4px 0 2px}
-
-  /* ---------- toast ---------- */
-  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,12px);z-index:80;display:flex;
-         align-items:center;gap:9px;padding:11px 15px;border-radius:9px;background:var(--elev);
-         border:1px solid var(--border-2);color:var(--text);font-size:13px;font-weight:500;
-         box-shadow:0 12px 30px -12px rgba(0,0,0,.75);opacity:0;pointer-events:none;
-         transition:opacity .18s,transform .18s;max-width:92vw}
-  .toast.show{opacity:1;transform:translate(-50%,0)}
-  .toast .ic{width:16px;height:16px;color:var(--green)}
-
-  /* ---------- responsive ---------- */
   @media(max-width:820px){
     .stats{grid-template-columns:repeat(2,1fr)}
-    .stat:nth-child(2){border-right:0}
-    .stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--border)}
     .meta{grid-template-columns:repeat(2,1fr);gap:14px}
-    .steps{grid-template-columns:1fr}
-    .step{border-right:0;border-bottom:1px solid var(--border)}
-    .step:last-child{border-bottom:0}
+  }
+  @media(min-width:821px) and (max-width:1100px){
+    .stats{gap:10px}
+    .stat{padding:16px 12px}
+    .stat .l{font-size:11px}
+    .dashboard-head{align-items:flex-start;flex-direction:column;gap:12px}
   }
   @media(max-width:560px){
-    .wrap{padding:18px 14px 70px}
-    .topbar{padding:0 14px}
-    .brand .sub{display:none}
-    .uchip .nm{display:none}
-    .dev-body{padding:14px}
-    .actions .btn{flex:1 1 auto}
+    .dashboard-head{align-items:flex-start;flex-direction:column;gap:14px}
+    .stats{gap:10px;margin-bottom:26px}
+    .stat{padding:16px 14px}
+    .stat .l{font-size:11px;gap:6px;margin-bottom:12px}
+    .stat .n{font-size:28px}
+    .dev-body{padding:16px}
+    .dev-name{flex-wrap:wrap}
+    .dev-name h3{max-width:calc(100% - 20px)}
+    .dev-sub{font-size:11px;gap:6px}
+    .meta{padding:14px;gap:16px 12px}
+    .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .actions .btn{padding:10px 6px;min-height:44px;font-size:12px}
     .actions .spacer{display:none}
+    .ev{flex-wrap:wrap;gap:8px}
+    .evtxt{overflow-wrap:anywhere}
+    .evtime{margin-left:34px}
+    .shots{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
   }
-</style>
-</head>
-<body>
-
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></symbol>
-  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
-  <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
-  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
-  <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
-  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
-  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
-  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
-  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
-  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
-  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
-  <symbol id="i-gamepad" viewBox="0 0 24 24"><line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><rect x="2" y="6" width="20" height="12" rx="6"/></symbol>
-  <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
-  <symbol id="i-map" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
-  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
-  <symbol id="i-activity" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
-  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
-  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
-  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
-  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
-  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
-</defs></svg>
+{% endblock %}
 
 {% macro status_badge(status) -%}
 {%- if status == 'armed' -%}<span class="badge b-armed js-status"><svg class="ic"><use href="#i-shield"/></svg>กำลังเฝ้าเกม</span>
@@ -300,24 +146,16 @@
 {%- endif -%}
 {%- endmacro %}
 
-<header class="topbar">
-  <div class="brand">
-    <span class="logo"><svg class="ic" style="width:15px;height:15px;stroke-width:2.4"><use href="#i-refresh"/></svg></span>
-    <b>Rejoin</b>
-    <span class="sub">ระบบกู้เกมอัตโนมัติ</span>
-  </div>
-  <div class="top-right">
-    <div class="uchip">
-      <span class="av">{{ (user.username or user.discord_id or '?')[0]|upper }}</span>
-      <span class="nm">{{ user.username or user.discord_id }}</span>
-    </div>
-    <button class="btn ghost icon" title="ออกจากระบบ" aria-label="ออกจากระบบ" onclick="logout()">
-      <svg class="ic"><use href="#i-logout"/></svg>
-    </button>
-  </div>
-</header>
+{% block content %}
 
-<div class="wrap">
+  <header class="dashboard-head">
+    <div class="page-head">
+      <div class="eyebrow">YOUR GAME, ALWAYS ON</div>
+      <h1>ภาพรวมของคุณ</h1>
+      <p>ดูแลทุกเครื่องในที่เดียว ให้ Rejoin ช่วยเฝ้าเกมแทนคุณ</p>
+    </div>
+    <span class="live-note"><span class="dot"></span>อัปเดตสถานะทุก 10 วินาที</span>
+  </header>
 
   <!-- ---------- ภาพรวม ---------- -->
   <section class="stats">
@@ -336,22 +174,6 @@
     <div class="stat">
       <div class="l"><svg class="ic"><use href="#i-refresh"/></svg>กู้เกมสำเร็จรวม</div>
       <div class="n" id="statRejoins">{{ total_rejoins }}</div>
-    </div>
-  </section>
-
-  <!-- ---------- วิธีใช้งาน ---------- -->
-  <section class="steps">
-    <div class="step">
-      <span class="num">1</span>
-      <div><b>เพิ่มเครื่อง</b><span>กด “เพิ่มเครื่อง” แล้วจดรหัสที่ระบบให้ (แสดงครั้งเดียว)</span></div>
-    </div>
-    <div class="step">
-      <span class="num">2</span>
-      <div><b>กรอกรหัสในแอป</b><span>เปิดแอป Rejoin บนคลาวโฟน → วางรหัส → กดเริ่ม</span></div>
-    </div>
-    <div class="step">
-      <span class="num">3</span>
-      <div><b>เริ่มเฝ้าเกม</b><span>รอสถานะขึ้น “พร้อมใช้งาน” แล้วกด “เริ่มเฝ้าเกม” — จบ</span></div>
     </div>
   </section>
 
@@ -500,8 +322,9 @@
   </section>
   {% endfor %}
 
-</div>
+{% endblock %}
 
+{% block scripts %}
 <!-- ---------- modal: เพิ่มเครื่อง ---------- -->
 <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
   <form class="modal-card" onsubmit="return submitAdd(event)">
@@ -543,29 +366,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"><svg class="ic"><use href="#i-check"/></svg><span id="toastText"></span></div>
-
 <script>
-/* ---------------- toast ---------------- */
-let toastTimer;
-function toast(msg){
-  const t = document.getElementById('toast');
-  document.getElementById('toastText').textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
-}
-
-/* ---------------- modal ---------------- */
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
-});
-
 /* ---------------- tabs ---------------- */
 function switchTab(btn){
   const card = btn.closest('.device');
@@ -630,11 +431,6 @@ async function removeShot(id){
   const r = await fetch(`/api/me/screenshots/${id}`, {method:'DELETE'});
   if (r.ok){ toast('ลบภาพแล้ว'); setTimeout(() => location.reload(), 500); }
   else toast('ลบไม่สำเร็จ');
-}
-
-async function logout(){
-  await fetch('/auth/logout', {method:'POST'});
-  location.href = '/';
 }
 
 /* ---------------- อัปเดตสถานะสด (ไม่ต้องรีเฟรช) ---------------- */
@@ -722,5 +518,4 @@ async function poll(){
 }
 setInterval(poll, 10000);
 </script>
-</body>
-</html>
+{% endblock %}
