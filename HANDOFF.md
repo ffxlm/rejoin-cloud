@@ -1,6 +1,6 @@
 # HANDOFF — งานต่อไปสำหรับคนที่มารับช่วง
 
-> อัปเดตล่าสุด: 2026-10-08 · commit `4bc4ea3`
+> อัปเดตล่าสุด: 2026-10-08 · commit `68beb0b`
 > อ่านคู่กับ: `PLAN.md` (ดีไซน์), `CONTRACT.md` (สัญญา/DB), `PHASE0_RESULTS.md` (ผลเทสต์)
 
 ---
@@ -14,7 +14,8 @@
 - ✅ Contract + DB schema — ร่างแล้ว
 - ✅ Walking Skeleton — รันได้จริง
 - ✅ Watchdog + auto-rejoin จริง — ผ่าน (13/13 unit tests + end-to-end บนเครื่อง)
-- ⏭️ เหลือ: ทำ "ของจริง" ในเฟส 1 (auth, DB, APK Kotlin, alert, screenshot)
+- ✅ **Backend จริง (P1)** — Postgres/Redis + Discord OAuth + รหัสเครื่อง hash (24 tests ผ่าน)
+- ⏭️ เหลือ: **APK Kotlin จริง** (auth/DB/APK/alert/screenshot)
 
 ---
 
@@ -22,15 +23,16 @@
 
 | อย่าง | pid | คำสั่ง | หมายเหตุ |
 |---|---|---|---|
-| backend | 5903 | `.venv/bin/uvicorn skeleton.backend.app:app --host 0.0.0.0 --port 8000` | in-memory, หยุดแล้วข้อมูลหาย |
-| agent | 5965 | `python3 -m skeleton.agent.agent ...` | **ยัง armed อยู่** กำลังเฝ้าเครื่อง |
-| listener | 2535 | `python3 phase0/local_listener.py 8787` | ของเหลือจาก Phase 0 ไม่ใช้แล้ว |
+| backend | 10084 | `.venv/bin/uvicorn skeleton.backend.app:app --host 0.0.0.0 --port 8000` | **backend จริง** (dev: SQLite `rejoin.db` + fakeredis) |
+| agent | 10144 | `python3 -m skeleton.agent.agent ...` | **ยัง armed อยู่** กำลังเฝ้าเครื่อง (รหัสเครื่องออกจากเว็บ) |
 
 ปิดทั้งหมด:
 ```bash
 pkill -f "uvicorn skeleton.backend"; pkill -f "skeleton.agent.agent"; pkill -f local_listener
 ```
 > ⚠️ **agent ยัง arm อยู่** — ถ้าทิ้งไว้แล้วเกมหลุด มันจะรีเกมเอง
+> ℹ️ หลังเปลี่ยน backend: รหัสเครื่องเก่า (`DEMO-0001`) ใช้ไม่ได้แล้ว — ต้องกด "เพิ่มเครื่อง"
+>    ในเว็บเพื่อเอารหัสใหม่ (RJ-XXXXX-XXXXX) แล้วรัน agent ด้วย `--code` นั้น
 
 ---
 
@@ -44,7 +46,7 @@ cd /home/film/Desktop/rejoin
 
 # 2) python venv (ไม่ขึ้น git — ต้องสร้างใหม่)
 python3 -m venv .venv
-.venv/bin/pip install fastapi "uvicorn[standard]"
+.venv/bin/pip install -r requirements.txt
 
 # 3) รันเทสต์
 .venv/bin/python -m unittest discover -s skeleton/tests -v
@@ -92,14 +94,16 @@ python3 -m venv .venv
 - [ ] ส่ง heartbeat ไปเว็บ (OkHttp)
 - [ ] Poll คำสั่ง arm/disarm/rejoin_now
 
-### 🟠 P1 — Backend จริง (แทน in-memory)
-- [ ] **Discord OAuth2** login (session cookie)
-- [ ] **PostgreSQL** — ใช้ schema ใน `CONTRACT.md` (6 ตาราง)
-- [ ] **Redis** — เก็บ `last_seen` (TTL) สำหรับ watchdog
-- [ ] ออก/จัดการ **รหัสเครื่อง** (hash ด้วย Argon2/bcrypt — อย่าเก็บ plaintext)
-- [ ] `/api/agent/register` ตรวจ device_code จริง (ตอนนี้รับมั่ว)
-- [ ] revoke token
-- [ ] ย้าย event log จาก memory → ตาราง `events`
+### 🟠 P1 — Backend จริง (แทน in-memory) — ✅ เสร็จแล้ว (commit `68beb0b`)
+- [x] **Discord OAuth2** login (session cookie) + `/auth/dev` สำหรับ dev
+- [x] **PostgreSQL** — 6 ตารางตาม `CONTRACT.md` (SQLAlchemy async; dev = SQLite)
+- [x] **Redis** — เก็บ `last_seen` (TTL) + คิวคำสั่ง (dev = fakeredis)
+- [x] ออก/จัดการ **รหัสเครื่อง** (Argon2 + lookup sha256 — ไม่เก็บ plaintext) + revoke
+- [x] `/api/agent/register` ตรวจ device_code จริง (ไม่รับมั่วแล้ว)
+- [x] ย้าย event log จาก memory → ตาราง `events`
+- [x] แดชบอร์ด Jinja2 + ปุ่ม arm/disarm/rejoin_now + เพิ่มเครื่อง
+- [ ] เปิดใช้ Postgres/Redis จริงบน production (ต้องมีสิทธิ์ docker / ติดตั้งในเครื่อง)
+- [ ] ยืนยัน Discord OAuth กับ app จริง (ต้องมี DISCORD_CLIENT_ID/SECRET)
 
 ### 🟡 P2 — ฟีเจอร์ใช้งานจริง
 - [ ] แคปภาพหน้าจอ (root `screencap`) + ย่อ + JPEG → อัปขึ้น S3/MinIO + retention 7 วัน
@@ -160,6 +164,9 @@ rejoin-cloud/
 ├── HANDOFF.md            # ← ไฟล์นี้
 ├── PHASE0_CHECKLIST.md   # checklist เทสต์ Phase 0
 ├── PHASE0_RESULTS.md     # ผลเทสต์ Phase 0
+├── requirements.txt      # dependency ของ backend
+├── .env.example          # ตัวอย่าง env (Postgres/Redis/Discord)
+├── docker-compose.yml    # pg + redis + minio (production/dev infra)
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
 └── skeleton/
     ├── README.md         # วิธีรัน skeleton
@@ -168,11 +175,21 @@ rejoin-cloud/
     │   ├── watchdog.py           # ★ state machine (พอร์ตเป็น Kotlin ทีหลัง)
     │   ├── device.py             # adb actions
     │   └── agent.py              # orchestrator
-    ├── tests/test_watchdog.py    # 13 tests
-    └── backend/app.py            # FastAPI + dashboard (in-memory)
+    ├── tests/
+    │   ├── test_watchdog.py      # 17 tests (fake clock)
+    │   └── test_backend.py       # 7 tests (SQLite + fakeredis)
+    └── backend/                  # ★ backend จริง (Phase 1)
+        ├── app.py                # FastAPI + lifespan + แดชบอร์ด
+        ├── config.py             # อ่าน env
+        ├── db.py / models.py     # SQLAlchemy async + 6 ตาราง
+        ├── security.py           # Argon2 + lookup sha256
+        ├── redis_store.py        # last_seen TTL + คิวคำสั่ง
+        ├── serializers.py        # view + status (dead-man's switch)
+        ├── routers/              # auth / me / agent / device
+        └── templates/            # login.html + dashboard.html
 ```
 
-**ไม่ขึ้น git (ตาม `.gitignore`):** `.venv/`, `.tools/`, `phase0/artifacts/`, `*.png`, `*.apk`
+**ไม่ขึ้น git (ตาม `.gitignore`):** `.venv/`, `.tools/`, `phase0/artifacts/`, `*.png`, `*.apk`, `*.db`, `screenshots/`, `.env`
 
 ---
 
@@ -182,20 +199,20 @@ rejoin-cloud/
 # 1) เปิด backend
 .venv/bin/uvicorn skeleton.backend.app:app --host 0.0.0.0 --port 8000
 
-# 2) รัน agent (background)
+# 2) รัน agent (background) — ใช้รหัสเครื่องที่ออกจากเว็บ (RJ-XXXXX-XXXXX)
 .venv/bin/python -m skeleton.agent.agent \
   --adb .tools/platform-tools/adb --device 192.168.96.160:5555 \
-  --server http://127.0.0.1:8000 --code DEMO-0001 --place 107778070777162
+  --server http://127.0.0.1:8000 --code RJ-XXXXX-XXXXX --place 107778070777162
 
-# 3) สั่ง arm ผ่าน API (จำลองกดปุ่มบนเว็บ)
-curl -X POST http://127.0.0.1:8000/api/device/dev_1/arm
+# 3) สั่ง arm ผ่าน API (จำลองกดปุ่มบนเว็บ) — device id ดูจาก /api/me/devices
+curl -X POST http://127.0.0.1:8000/api/device/1/arm
 
 # 4) ฆ่าเก่าเพื่อจำลองหลุด
 .tools/platform-tools/adb shell su -c "am force-stop com.roblox.client"
 
 # 5) เฝ้าดู log: ควรเห็น phase เปลี่ยน connected -> rejoining -> armed
 #    และ rejoin_count เพิ่ม
-curl http://127.0.0.1:8000/api/me/devices
+curl -b cookies.txt http://127.0.0.1:8000/api/me/devices
 ```
 > รอเกมโหลดได้ถึง 3 นาที (เน็ตช้า) — อย่าใจร้อน
 
@@ -205,7 +222,7 @@ curl http://127.0.0.1:8000/api/me/devices
 
 1. realtime: **ไฟล์อย่างเดียว** หรือ **+ HTTPS ตรง**? (มีผลกับคีย์)
 2. timeout ที่เหมาะกับเน็ตช้า: 300 วิ? หรือปรับตาม state?
-3. เลือก tech stack จริง: FastAPI (ตามแผน) หรือ NestJS?
+3. ~~เลือก tech stack จริง: FastAPI (ตามแผน) หรือ NestJS?~~ → **เลือก FastAPI แล้ว**
 4. แจ้งเตือนช่องไหนก่อน: LINE / Telegram / Discord?
 5. APK: build บนเครื่องนี้ (ต้องโหลด SDK ~ใหญ่) หรือ CI?
 
