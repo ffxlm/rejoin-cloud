@@ -30,20 +30,6 @@ services:
       timeout: 3s
       retries: 10
 
-  # P2 — เก็บภาพหน้าจอ (S3-compatible)
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: rejoin
-      MINIO_ROOT_PASSWORD: rejoin-secret
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - miniodata:/data
-
 volumes:
   pgdata:
   redisdata:
-  miniodata:

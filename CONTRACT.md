@@ -1,4 +1,4 @@
-# Contract — สัญญาระหว่างชิ้นส่วน (v0.1)
+# Contract — สัญญาระหว่างชิ้นส่วน (v0.2)
 
 > ตรึง interface ระหว่าง Lua / APK / เว็บ ก่อนลงมือโค้ด เพื่อให้ทำขนานกันได้
 > อ้างอิงจากผลเทสต์ Phase 0 (`PHASE0_RESULTS.md`)
@@ -63,7 +63,6 @@ Content-Type: application/json
 |---|---|---|
 | POST | `/api/agent/register` | แลก device_code → device_token (ครั้งแรก) |
 | POST | `/api/agent/heartbeat` | ส่งสถานะทุก N วิ |
-| POST | `/api/agent/screenshot` | อัปโหลดภาพ (multipart) |
 | GET | `/api/device/command` | APK poll คำสั่ง |
 | POST | `/api/agent/event` | ส่ง event (rejoin/alert) |
 
@@ -103,18 +102,6 @@ Content-Type: application/json
 { "command": "rejoin_now", "id": "cmd_123" }
 ```
 
-### 2.3 screenshot (multipart)
-```
-POST /api/agent/screenshot
-Authorization: Bearer <device_token>
-Content-Type: multipart/form-data   field: file (image/png | image/jpeg)
-```
-- APK แคปด้วย root `screencap -p` → ย่อ ≤1280px → JPEG q70 → อัป
-- เว็บเก็บไฟล์ที่ `SCREENSHOT_DIR`, DB เก็บ url (`/screenshots/<name>`), เสิร์ฟผ่าน static mount
-- จำกัดขนาด `SCREENSHOT_MAX_BYTES` (default 5MB); เกิน → 413
-- retention: ลบภาพเก่ากว่า `SCREENSHOT_RETENTION_DAYS` (default 7) ทั้งไฟล์ + DB
-- ฝั่ง APK แคปเมื่อ: (1) คำสั่ง `screenshot_now` (2) ตอน `alert` (3) เป็นรอบถ้าตั้ง interval > 0
-
 ---
 
 ## 3. เว็บ → ผู้ใช้ (แดชบอร์ด)
@@ -132,9 +119,6 @@ Content-Type: multipart/form-data   field: file (image/png | image/jpeg)
 | POST | `/api/device/:id/arm` | เริ่ม auto-rejoin |
 | POST | `/api/device/:id/disarm` | หยุด auto-rejoin |
 | POST | `/api/device/:id/rejoin_now` | สั่งกู้เกมทันที |
-| POST | `/api/device/:id/screenshot` | สั่งแคปหน้าจอทันที (queue `screenshot_now`) |
-| GET | `/api/me/screenshots` | รายการภาพหน้าจอล่าสุด (`?device_id=&limit=`) |
-| DELETE | `/api/me/screenshots/:id` | ลบภาพ 1 รูป |
 | WS | `/ws` | อัปเดตสถานะสด |
 
 ---
@@ -199,14 +183,6 @@ CREATE TABLE device_state (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ภาพหน้าจอ (ไฟล์อยู่ S3/MinIO, DB เก็บแค่ url)
-CREATE TABLE screenshots (
-  id         BIGSERIAL PRIMARY KEY,
-  device_id  BIGINT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-  url        TEXT NOT NULL,
-  ts         TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 -- เหตุการณ์ (connect/rejoin/alert/arm/disarm) — ใช้คำนวณ runtime/rejoin_count
 CREATE TABLE events (
   id         BIGSERIAL PRIMARY KEY,
@@ -238,3 +214,4 @@ CREATE INDEX idx_events_device_ts ON events(device_id, ts DESC);
 |---|---|---|
 | schema (v) | 1 | เริ่มต้น |
 | contract | 0.1 | ร่างแรกหลัง Phase 0 |
+| contract | 0.2 | เอาระบบแคปภาพหน้าจอ (screenshot) ออกทั้งวงจร |

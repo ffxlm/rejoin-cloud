@@ -1,10 +1,11 @@
 """
 models.py — Data model ตาม CONTRACT.md §5 (PostgreSQL, แต่รันบน SQLite ได้)
 ------------------------------------------------------------------
-ตาราง: users, devices, device_tokens, device_state, screenshots, events
+ตาราง: users, devices, device_tokens, device_state, events
 หมายเหตุ:
   - ไม่เก็บ device_code/device_token เป็น plaintext → เก็บ lookup (sha256) + hash (Argon2)
-  - rejoin_count / runtime ไม่เก็บซ้ำ → คำนวณจาก events
+  - rejoin_total = ยอดสะสมตลอดชีพ (ไม่ขึ้นกับ retention ของ events) ส่วน runtime
+    ยังคำนวณจาก events
 """
 from __future__ import annotations
 
@@ -64,6 +65,9 @@ class Device(Base):
     lua_version: Mapped[Optional[str]] = mapped_column(String(32))
     apk_version: Mapped[Optional[str]] = mapped_column(String(32))
     last_seen: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    rejoin_total: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0"
+    )  # ยอดกู้เกมสำเร็จสะสม (ไม่ถูกลบโดย retention)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
     user: Mapped["User"] = relationship(back_populates="devices")
@@ -110,15 +114,6 @@ class DeviceState(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
     device: Mapped["Device"] = relationship(back_populates="state")
-
-
-class Screenshot(Base):
-    __tablename__ = "screenshots"
-
-    id: Mapped[int] = mapped_column(PK, primary_key=True)
-    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id", ondelete="CASCADE"), index=True)
-    url: Mapped[str] = mapped_column(Text)
-    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 
 class Event(Base):

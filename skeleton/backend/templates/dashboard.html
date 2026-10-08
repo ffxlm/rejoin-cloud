@@ -50,34 +50,15 @@
   .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:15px;border-top:1px solid var(--border)}
   .actions .spacer{flex:1}
 
-  /* ---------- tabs ---------- */
-  .tabs{display:flex;gap:2px;margin-top:16px;border-bottom:1px solid var(--border)}
-  .tab{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;background:none;border:0;
-       border-bottom:1.5px solid transparent;color:var(--muted);font:inherit;font-size:12.5px;
-       font-weight:500;cursor:pointer;margin-bottom:-1px}
-  .tab .ic{width:14px;height:14px}
-  .tab:hover{color:var(--text-2)}
-  .tab.active{color:var(--accent-h);border-bottom-color:var(--accent)}
-  .tab{min-height:44px}
-  .tab .pill{font-size:10.5px;color:var(--dim);background:var(--hover);border:1px solid var(--border);border-radius:5px;padding:0 5px}
+  /* ---------- history pane ---------- */
   .pane{padding-top:14px}
-  .pane[hidden]{display:none}
-
-  /* ---------- screenshots ---------- */
-  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-  .shot{margin:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--bg)}
-  .shot a{display:block;line-height:0}
-  .shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;transition:opacity .15s}
-  .shot:hover img{opacity:.88}
-  .shot .cap{display:flex;align-items:center;justify-content:space-between;gap:6px;
-             padding:6px 8px;font-size:11px;color:var(--dim)}
-  .shot .del{display:grid;place-items:center;width:32px;height:32px;border-radius:5px;
-             border:0;background:transparent;color:var(--dim);cursor:pointer}
-  .shot .del:hover{background:rgba(235,87,87,.12);color:#ef7a7a}
-  .shot .del .ic{width:12px;height:12px}
 
   /* ---------- events ---------- */
-  .evlist{display:flex;flex-direction:column}
+  .evlist{display:flex;flex-direction:column;max-height:340px;overflow-y:auto;
+          padding-right:6px;scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
+  .evlist::-webkit-scrollbar{width:8px}
+  .evlist::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:4px}
+  .evlist::-webkit-scrollbar-track{background:transparent}
   .ev{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;transition:background .12s}
   .ev + .ev{border-top:1px solid var(--border)}
   .ev:hover{background:var(--hover)}
@@ -89,7 +70,6 @@
   .ev-arm .evic{color:var(--text-2);background:rgba(255,255,255,.08)}
   .ev-disarm .evic{color:var(--muted);background:var(--hover)}
   .ev-rejoin_now .evic{color:#e6c356;background:rgba(242,201,76,.1)}
-  .ev-screenshot_now .evic{color:#7fb8f0;background:rgba(78,167,252,.1)}
   .evtxt{flex:1;min-width:0;font-size:13px;color:var(--text-2)}
   .evtime{font-size:11.5px;color:var(--dim);white-space:nowrap}
 
@@ -120,7 +100,6 @@
     .ev{flex-wrap:wrap;gap:8px}
     .evtxt{overflow-wrap:anywhere}
     .evtime{margin-left:34px}
-    .shots{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
   }
 {% endblock %}
 
@@ -141,7 +120,6 @@
 {%- elif t == 'arm' -%}<svg class="ic"><use href="#i-play"/></svg>
 {%- elif t == 'disarm' -%}<svg class="ic"><use href="#i-stop"/></svg>
 {%- elif t == 'rejoin_now' -%}<svg class="ic"><use href="#i-zap"/></svg>
-{%- elif t == 'screenshot_now' -%}<svg class="ic"><use href="#i-camera"/></svg>
 {%- else -%}<svg class="ic"><use href="#i-activity"/></svg>
 {%- endif -%}
 {%- endmacro %}
@@ -247,52 +225,13 @@
         <button class="btn default" onclick="cmd('{{ d.device_id }}','rejoin_now')">
           <svg class="ic"><use href="#i-zap"/></svg> กู้เกมทันที
         </button>
-        <button class="btn default" onclick="cmd('{{ d.device_id }}','screenshot')">
-          <svg class="ic"><use href="#i-camera"/></svg> แคปภาพ
-        </button>
         <span class="spacer"></span>
         <button class="btn ghost" onclick="askRemoveDevice('{{ d.device_id }}','{{ d.name }}')">
           <svg class="ic"><use href="#i-trash"/></svg> ลบเครื่อง
         </button>
       </div>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="shots" onclick="switchTab(this)">
-          <svg class="ic"><use href="#i-image"/></svg> ภาพหน้าจอ
-          {% if d.screenshots %}<span class="pill">{{ d.screenshots|length }}</span>{% endif %}
-        </button>
-        <button class="tab" data-tab="events" onclick="switchTab(this)">
-          <svg class="ic"><use href="#i-list"/></svg> ประวัติ
-          {% if d.events %}<span class="pill">{{ d.events|length }}</span>{% endif %}
-        </button>
-      </div>
-
-      <div class="pane" data-pane="shots">
-        {% if d.screenshots %}
-        <div class="shots">
-          {% for s in d.screenshots %}
-          <figure class="shot">
-            <a href="{{ s.url }}" target="_blank" rel="noopener">
-              <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ d.name }}" loading="lazy">
-            </a>
-            <figcaption class="cap">
-              <span>{{ s.ago }}</span>
-              <button class="del" title="ลบภาพ" aria-label="ลบภาพ" onclick="removeShot({{ s.id }})">
-                <svg class="ic"><use href="#i-x"/></svg>
-              </button>
-            </figcaption>
-          </figure>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="none">
-          <svg class="ic"><use href="#i-camera"/></svg>
-          ยังไม่มีภาพ — กด “แคปภาพ” เพื่อขอภาพจากเครื่องนี้
-        </div>
-        {% endif %}
-      </div>
-
-      <div class="pane" data-pane="events" hidden>
+      <div class="pane">
         {% if d.events %}
         <div class="evlist">
           {% for e in d.events %}
@@ -304,7 +243,6 @@
               {% elif e.type == 'arm' %}เริ่มเฝ้าเกม
               {% elif e.type == 'disarm' %}หยุดเฝ้าเกม
               {% elif e.type == 'rejoin_now' %}สั่งกู้เกมทันที
-              {% elif e.type == 'screenshot_now' %}สั่งแคปภาพ
               {% else %}{{ e.type }}{% endif %}
             </span>
             <span class="evtime">{{ e.ago }}</span>
@@ -367,13 +305,6 @@
 </div>
 
 <script>
-/* ---------------- tabs ---------------- */
-function switchTab(btn){
-  const card = btn.closest('.device');
-  card.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === btn));
-  card.querySelectorAll('.pane').forEach(p => { p.hidden = p.dataset.pane !== btn.dataset.tab; });
-}
-
 /* ---------------- เพิ่มเครื่อง ---------------- */
 function openAdd(){
   const i = document.getElementById('devName');
@@ -402,20 +333,15 @@ function copyCode(){
 
 /* ---------------- คำสั่ง ---------------- */
 async function cmd(id, action, btn){
-  const labels = {arm:'เริ่มเฝ้าเกม', disarm:'หยุดเฝ้า', rejoin_now:'กู้เกมทันที', screenshot:'แคปภาพ'};
+  const labels = {arm:'เริ่มเฝ้าเกม', disarm:'หยุดเฝ้า', rejoin_now:'กู้เกมทันที'};
   if (btn) btn.classList.add('loading');
   const r = await fetch(`/api/device/${id}/${action}`, {method:'POST'});
   if (!r.ok){ if (btn) btn.classList.remove('loading'); toast('ทำรายการไม่สำเร็จ'); return; }
-  if (action === 'screenshot'){
-    toast('สั่งแคปภาพแล้ว — รอสักครู่ ภาพจะโผล่ในหน้านี้');
-    setTimeout(() => location.reload(), 6000);
-    return;
-  }
   toast('สั่ง “' + labels[action] + '” แล้ว — กำลังอัปเดต');
   setTimeout(() => location.reload(), 1400);
 }
 
-/* ---------------- ลบภาพ / ลบเครื่อง ---------------- */
+/* ---------------- ลบเครื่อง ---------------- */
 function askRemoveDevice(id, name){
   document.getElementById('confirmText').textContent =
     'ลบเครื่อง “' + name + '”? รหัสเครื่องนี้จะใช้ไม่ได้อีก';
@@ -426,11 +352,6 @@ function askRemoveDevice(id, name){
     else toast('ลบไม่สำเร็จ');
   };
   openModal('confirmModal');
-}
-async function removeShot(id){
-  const r = await fetch(`/api/me/screenshots/${id}`, {method:'DELETE'});
-  if (r.ok){ toast('ลบภาพแล้ว'); setTimeout(() => location.reload(), 500); }
-  else toast('ลบไม่สำเร็จ');
 }
 
 /* ---------------- อัปเดตสถานะสด (ไม่ต้องรีเฟรช) ---------------- */

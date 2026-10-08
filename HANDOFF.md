@@ -1,6 +1,6 @@
 # HANDOFF — งานต่อไปสำหรับคนที่มารับช่วง
 
-> อัปเดตล่าสุด: 2026-10-08 · commit `68beb0b`
+> อัปเดตล่าสุด: 2026-10-09 (เอาระบบแคปภาพหน้าจอออกทั้งวงจร)
 > อ่านคู่กับ: `PLAN.md` (ดีไซน์), `CONTRACT.md` (สัญญา/DB), `PHASE0_RESULTS.md` (ผลเทสต์)
 
 ---
@@ -19,7 +19,7 @@
 - ✅ **APK ทำงานจริงแล้ว** — พอร์ต agent.py → Kotlin ครบ (register/Lua/watchdog/root rejoin)
   ทดสอบ end-to-end ผ่าน **public HTTPS** (ข้ามเน็ตจริง) สำเร็จ: arm → เปิดเกมเอง → armed
 - ✅ **Deploy stack** — Dockerfile + compose (app/pg/redis/Caddy HTTPS) + `DEPLOY.md` พร้อมขึ้น VPS
-- ✅ **แคปหน้าจอ (P2)** — root screencap → ย่อ → JPEG → อัปเว็บ + ปุ่ม/แสดงผลบนแดชบอร์ด + retention 7 วัน
+- ❌ **เอาระบบแคปภาพหน้าจอ (screenshot) ออกทั้งวงจร** — APK/เว็บ/แดชบอร์ด/เอกสาร
 - ⏭️ เหลือ: deploy จริงบน VPS + Discord OAuth จริง + P2 ที่เหลือ (alert/WebSocket)
 
 ---
@@ -59,7 +59,7 @@ python3 -m venv .venv
 
 **ยังไม่มีในเครื่องนี้ (ต้องติดตั้งถ้าจะทำต่อ):**
 - Android SDK + Gradle (สำหรับ APK Kotlin จริง) — `ANDROID_HOME` ว่าง
-- PostgreSQL, Redis, MinIO (สำหรับเฟส 1)
+- PostgreSQL, Redis (สำหรับเฟส 1)
 - มีแล้ว: Java 21, Node 24, Python 3.12
 
 ---
@@ -105,7 +105,7 @@ python3 -m venv .venv
 
 ### 🟠 P1 — Backend จริง (แทน in-memory) — ✅ เสร็จแล้ว (commit `68beb0b`)
 - [x] **Discord OAuth2** login (session cookie) + `/auth/dev` สำหรับ dev
-- [x] **PostgreSQL** — 6 ตารางตาม `CONTRACT.md` (SQLAlchemy async; dev = SQLite)
+- [x] **PostgreSQL** — 5 ตารางตาม `CONTRACT.md` (SQLAlchemy async; dev = SQLite)
 - [x] **Redis** — เก็บ `last_seen` (TTL) + คิวคำสั่ง (dev = fakeredis)
 - [x] ออก/จัดการ **รหัสเครื่อง** (Argon2 + lookup sha256 — ไม่เก็บ plaintext) + revoke
 - [x] `/api/agent/register` ตรวจ device_code จริง (ไม่รับมั่วแล้ว)
@@ -116,11 +116,6 @@ python3 -m venv .venv
 - [ ] ยืนยัน Discord OAuth กับ app จริง (ต้องมี DISCORD_CLIENT_ID/SECRET)
 
 ### 🟡 P2 — ฟีเจอร์ใช้งานจริง
-- [x] **แคปภาพหน้าจอ** — root `screencap` + ย่อ + JPEG → อัปขึ้นเว็บ + retention 7 วัน
-  - ฝั่งเว็บ: `POST /api/device/:id/screenshot` (สั่ง), `GET /api/me/screenshots`, `DELETE /api/me/screenshots/:id`
-  - APK: `Screenshot.kt` (แคป/ย่อ/บีบอัด) + `Api.uploadScreenshot` + ปุ่ม “📷 แคปภาพ” บนแดชบอร์ด
-  - Python agent: `Device.capture_screenshot` + `Agent.send_screenshot` (มีไว้ทดสอบก่อนพอร์ต)
-  - เก็บไฟล์ที่ `SCREENSHOT_DIR` (เสิร์ฟผ่าน `/screenshots`), ลบเก่าอัตโนมัติตาม `SCREENSHOT_RETENTION_DAYS`
 - [ ] avatar/ตัวละคร/แมพ จาก Lua (มีแล้วบางส่วน — ทำ fallback)
 - [ ] แจ้งเตือน LINE/Telegram/Discord webhook ตอน alert
 - [ ] WebSocket อัปเดตแดชบอร์ดสด
@@ -180,7 +175,7 @@ rejoin-cloud/
 ├── PHASE0_RESULTS.md     # ผลเทสต์ Phase 0
 ├── requirements.txt      # dependency ของ backend
 ├── .env.example          # ตัวอย่าง env (Postgres/Redis/Discord)
-├── docker-compose.yml    # pg + redis + minio (dev infra)
+├── docker-compose.yml    # pg + redis (dev infra)
 ├── DEPLOY.md             # ★ คู่มือ deploy ขึ้น VPS (ใช้ได้ทั่วโลก)
 ├── deploy/               # ★ stack production
 │   ├── Dockerfile
@@ -196,8 +191,7 @@ rejoin-cloud/
 │       ├── AgentLoop.kt        # orchestrator (register→Lua→เฝ้า→รีเกม)
 │       ├── Watchdog.kt         # dead-man's switch (pure)
 │       ├── RootShell.kt        # su -c (pidof/force-stop/launch/push Lua)
-│       ├── Api.kt              # OkHttp (register/heartbeat/event/lua/screenshot)
-│       ├── Screenshot.kt       # แคปหน้าจอ → ย่อ → JPEG (root screencap)
+│       ├── Api.kt              # OkHttp (register/heartbeat/event/lua)
 │       └── Prefs.kt            # EncryptedSharedPreferences
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
 └── skeleton/
@@ -209,20 +203,19 @@ rejoin-cloud/
     │   └── agent.py              # orchestrator
     ├── tests/
     │   ├── test_watchdog.py      # 17 tests (fake clock)
-    │   └── test_backend.py       # 12 tests (SQLite + fakeredis; รวม screenshot + retention)
+    │   └── test_backend.py       # tests (SQLite + fakeredis; event retention)
     └── backend/                  # ★ backend จริง (Phase 1)
         ├── app.py                # FastAPI + lifespan + แดชบอร์ด
         ├── config.py             # อ่าน env
-        ├── db.py / models.py     # SQLAlchemy async + 6 ตาราง
+        ├── db.py / models.py     # SQLAlchemy async + 5 ตาราง
         ├── security.py           # Argon2 + lookup sha256
         ├── redis_store.py        # last_seen TTL + คิวคำสั่ง
         ├── serializers.py        # view + status (dead-man's switch)
-        ├── screenshots.py        # เก็บ/ลบไฟล์ภาพ + retention ★ (ใหม่)
         ├── routers/              # auth / me / agent / device
         └── templates/            # login.html + dashboard.html
 ```
 
-**ไม่ขึ้น git (ตาม `.gitignore`):** `.venv/`, `.tools/`, `phase0/artifacts/`, `*.png`, `*.apk`, `*.db`, `screenshots/`, `.env`
+**ไม่ขึ้น git (ตาม `.gitignore`):** `.venv/`, `.tools/`, `phase0/artifacts/`, `*.png`, `*.apk`, `*.db`, `.env`
 
 ---
 
@@ -248,16 +241,6 @@ curl -X POST http://127.0.0.1:8000/api/device/1/arm
 curl -b cookies.txt http://127.0.0.1:8000/api/me/devices
 ```
 > รอเกมโหลดได้ถึง 3 นาที (เน็ตช้า) — อย่าใจร้อน
-
-### ทดสอบแคปหน้าจอ
-```bash
-# สั่งแคปทันที (เหมือนกดปุ่ม 📷 บนแดชบอร์ด)
-curl -b cookies.txt -X POST http://127.0.0.1:8000/api/device/1/screenshot
-# รอ APK อัป (2-5 วิ) แล้วดูรายการภาพ
-curl -b cookies.txt http://127.0.0.1:8000/api/me/screenshots
-# ภาพเสิร์ฟที่ http://127.0.0.1:8000/screenshots/<name>
-```
-> Python agent เปิดแคปเป็นรอบได้ด้วย `--screenshot-interval 300` (0 = ปิด; ยังสั่งจากเว็บได้เสมอ)
 
 ---
 

@@ -23,7 +23,7 @@ skeleton/
 └── backend/                    # ★ Backend จริง (Phase 1)
     ├── app.py                  # FastAPI: สร้าง app, lifespan, แดชบอร์ด
     ├── config.py               # อ่าน env (Postgres/Redis/Discord)
-    ├── db.py / models.py       # SQLAlchemy async + 6 ตาราง (CONTRACT §5)
+    ├── db.py / models.py       # SQLAlchemy async + 5 ตาราง (CONTRACT §5)
     ├── security.py             # รหัสเครื่อง (Argon2 + lookup sha256)
     ├── redis_store.py          # last_seen TTL + คิวคำสั่ง (fakeredis ใน dev)
     ├── serializers.py          # แปลง model → view + คำนวณ status (dead-man's switch)
@@ -81,7 +81,6 @@ $ADB push skeleton/lua/rejoin_agent.lua /storage/emulated/0/Delta/Autoexecute/re
 
 ## ยังไม่ทำ (เฟสถัดไป)
 - APK จริงเป็น Kotlin (ตอนนี้ agent.py จำลองผ่าน adb)
-- screenshot → S3/MinIO + retention (มี endpoint รับแล้ว แต่ยังไม่เก็บที่อื่น)
 - alert (LINE/Telegram/Discord webhook)
 - WebSocket อัปเดตแดชบอร์ดสด (ตอนนี้รีเฟรชหน้า)
 - เปิดใช้ Postgres/Redis จริง (ต้องมีสิทธิ์ docker หรือติดตั้งในเครื่อง)

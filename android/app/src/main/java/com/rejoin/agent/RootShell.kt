@@ -68,14 +68,6 @@ class RootShell {
         return run(cmd).ok
     }
 
-    /**
-     * แคปหน้าจอด้วย `screencap -p` ไปยัง path ในเครื่อง (เช่น cache dir ของแอป)
-     * แล้ว chmod ให้แอปอ่านไฟล์ได้
-     */
-    fun captureScreen(outPath: String): Boolean {
-        return run("screencap -p '$outPath' && chmod 644 '$outPath'", timeoutMs = 25_000).ok
-    }
-
     companion object {
         const val GAME_PKG = "com.roblox.client"
         const val AUTOEXEC_DIR = "/storage/emulated/0/Delta/Autoexecute"

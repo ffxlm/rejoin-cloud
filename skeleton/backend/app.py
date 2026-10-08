@@ -14,27 +14,27 @@ app.py — Rejoin Backend (FastAPI) — ของจริง (Postgres/Redis) +
 """
 from __future__ import annotations
 
+import asyncio
 import os
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.sessions import SessionMiddleware
 
 from .config import Settings
-from .db import Base, build_engine, build_sessionmaker
+from .db import Base, build_engine, build_sessionmaker, ensure_schema
 from .deps import get_db, get_store
-from .models import Device, Event, Screenshot, User
+from .events import cleanup_old_events
+from .models import Device, Event, User
 from .redis_store import Store, build_store
 from .routers import agent as agent_router
 from .routers import auth as auth_router
 from .routers import device as device_router
 from .routers import me as me_router
-from .screenshots import cleanup_old_screenshots
 from .serializers import build_device_view, user_public
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -49,19 +49,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engine = build_engine(settings.database_url)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(ensure_schema)
         app.state.settings = settings
         app.state.engine = engine
         app.state.sessionmaker = build_sessionmaker(engine)
         app.state.store = build_store(settings.redis_url, settings.last_seen_ttl_sec)
-        # ลบภาพหน้าจอที่เก่ากว่า retention ตอนเริ่มระบบ
-        try:
-            async with app.state.sessionmaker() as session:
-                await cleanup_old_screenshots(session, settings)
-        except Exception:
-            pass
+
+        async def _run_retention() -> None:
+            """ลบเหตุการณ์ที่เก่ากว่า retention (best-effort)"""
+            try:
+                async with app.state.sessionmaker() as session:
+                    await cleanup_old_events(session, settings)
+            except Exception:
+                pass
+
+        # ลบของเก่าตอนเริ่มระบบ + ทำซ้ำเป็นรอบ ๆ ระหว่างรัน (กัน DB บวม)
+        await _run_retention()
+
+        async def _retention_loop() -> None:
+            while True:
+                await asyncio.sleep(settings.retention_interval_sec)
+                await _run_retention()
+
+        retention_task = asyncio.create_task(_retention_loop())
         try:
             yield
         finally:
+            retention_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await retention_task
             await app.state.store.close()
             await engine.dispose()
 
@@ -77,13 +93,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(me_router.router)
     app.include_router(agent_router.router)
     app.include_router(device_router.router)
-
-    os.makedirs(settings.screenshot_dir, exist_ok=True)
-    app.mount(
-        "/screenshots",
-        StaticFiles(directory=settings.screenshot_dir, check_dir=False),
-        name="screenshots",
-    )
 
     def _login_response(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
@@ -119,19 +128,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         devices = (
             await db.execute(select(Device).where(Device.user_id == user.id).order_by(Device.id))
         ).scalars().all()
-        counts = {}
-        if devices:
-            rows = (
-                await db.execute(
-                    select(Event.device_id, func.count(Event.id))
-                    .where(Event.device_id.in_([d.id for d in devices]), Event.type == "rejoin")
-                    .group_by(Event.device_id)
-                )
-            ).all()
-            counts = {r[0]: r[1] for r in rows}
-
         views = [
-            await build_device_view(d, store, settings, rejoin_count=counts.get(d.id, 0))
+            await build_device_view(d, store, settings, rejoin_count=d.rejoin_total or 0)
             for d in devices
         ]
 
@@ -141,15 +139,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 .where(Event.device_id.in_([d.id for d in devices]) if devices else False)
                 .order_by(Event.ts.desc())
                 .limit(400)
-            )
-        ).scalars().all() if devices else []
-
-        shots = (
-            await db.execute(
-                select(Screenshot)
-                .where(Screenshot.device_id.in_([d.id for d in devices]) if devices else False)
-                .order_by(Screenshot.ts.desc())
-                .limit(120)
             )
         ).scalars().all() if devices else []
 
@@ -175,22 +164,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ts = int(e.ts.timestamp())
             return {"type": e.type, "ts": ts, "ago": _ago(ts), "detail": e.detail or {}}
 
-        def _shot_view(s: Screenshot) -> dict:
-            ts = int(s.ts.timestamp())
-            return {"id": s.id, "url": s.url, "ts": ts, "ago": _ago(ts)}
-
-        # จัดกลุ่มภาพ + เหตุการณ์ "แยกตามเครื่อง" (แต่ละการ์ดมีของตัวเอง)
-        MAX_EVENTS, MAX_SHOTS = 8, 6
+        # จัดกลุ่มเหตุการณ์ "แยกตามเครื่อง" (แต่ละการ์ดมีของตัวเอง)
+        # ประวัติโชว์ได้เยอะขึ้น แต่ฝั่ง UI เป็นกล่องเลื่อน (ไม่ให้หน้ายาว)
+        MAX_EVENTS = 50
         events_by_dev: dict[int, list] = {}
         for e in events:
             bucket = events_by_dev.setdefault(e.device_id, [])
             if len(bucket) < MAX_EVENTS:
                 bucket.append(_event_view(e))
-        shots_by_dev: dict[int, list] = {}
-        for s in shots:
-            bucket = shots_by_dev.setdefault(s.device_id, [])
-            if len(bucket) < MAX_SHOTS:
-                bucket.append(_shot_view(s))
 
         panels = [
             {
@@ -200,7 +181,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     _ago(now - v["last_seen_age_sec"]) if v["last_seen_age_sec"] is not None else None
                 ),
                 "events": events_by_dev.get(d.id, []),
-                "screenshots": shots_by_dev.get(d.id, []),
             }
             for d, v in zip(devices, views)
         ]

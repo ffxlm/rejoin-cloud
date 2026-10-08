@@ -32,7 +32,7 @@
 │   [เกม]                                               │
 │   [Delta + Lua ตัวรัน]  ──ส่งข้อมูล/สัญญาณ──► [APK]   │
 │   [APK Rejoin Agent]                                  │
-│        │ ยัด Lua / เปิดเกม / รีเกม / แคปภาพ           │
+│        │ ยัด Lua / เปิดเกม / รีเกม                  │
 └────────┼──────────────────────────────────────────────┘
          │ APK แนบ "รหัสเครื่อง" ส่งไปเว็บ
          ▼
@@ -44,9 +44,9 @@
 | ชิ้น | ที่อยู่ | หน้าที่ |
 |---|---|---|
 | **Lua** | ในเกม (Delta/Autoexecute) | รันสคริปต์ + ส่ง avatar/ตัวละคร/แมพ + สัญญาณ "ยังอยู่" ให้ APK (ผ่านไฟล์) |
-| **APK Agent** | บนคลาวโฟน | อ่าน state จาก Lua → เติมรหัสเครื่อง → ส่งเว็บ / เฝ้าเกม / รีเกม / ยัด Lua / แคปภาพ |
+| **APK Agent** | บนคลาวโฟน | อ่าน state จาก Lua → เติมรหัสเครื่อง → ส่งเว็บ / เฝ้าเกม / รีเกม / ยัด Lua |
 | **เว็บ** | เซิร์ฟเวอร์ | ล็อกอิน Discord, ออก/จัดการรหัสเครื่อง, แดชบอร์ด, ปุ่มเริ่ม auto-rejoin |
-| **DB + Storage** | เซิร์ฟเวอร์ | เก็บ user, เครื่อง, สถานะ, ประวัติ rejoin, ภาพหน้าจอ |
+| **DB + Storage** | เซิร์ฟเวอร์ | เก็บ user, เครื่อง, สถานะ, ประวัติ rejoin |
 
 ---
 
@@ -107,7 +107,7 @@ APK ส่ง heartbeat ไปเว็บด้วย ถ้าเว็บไ�
 
 ### 4.2 APK → เว็บ
 - แนบรหัสเครื่อง (device token) ใน header
-- ส่ง: สถานะเครื่อง, สถานะเกม, ข้อมูลจาก Lua, ภาพหน้าจอ (แยก endpoint)
+- ส่ง: สถานะเครื่อง, สถานะเกม, ข้อมูลจาก Lua
 
 ```
 POST /api/agent/heartbeat
@@ -236,7 +236,6 @@ armed + heartbeat ขาด → rejoining → (กลับได้ → armed /
 | `devices` | id, user_id, name, game_pkg, status, last_seen, armed_at, rejoin_count, session_start, lua_version |
 | `device_tokens` | id, device_id, token_hash, created_at, revoked_at |
 | `device_state` | device_id, avatar, character, map, updated_at (จาก Lua) |
-| `screenshots` | device_id, url, ts |
 | `events` | device_id, type (connect/rejoin/alert/arm), detail, ts |
 
 **หมายเหตุ:**
@@ -263,7 +262,6 @@ GET  /api/download/lua?device=..      → ดาวน์โหลด Lua (เ�
 # APK / Agent
 POST /api/agent/register              → ลงทะเบียนด้วยรหัสเครื่อง → device_token
 POST /api/agent/heartbeat             → ส่งสถานะ (ทุก N วิ)
-POST /api/agent/screenshot            → อัปโหลดภาพหน้าจอ
 GET  /api/device/:id/command          → APK poll คำสั่ง
 POST /api/device/:id/arm              → กดเริ่ม auto-rejoin
 POST /api/device/:id/disarm           → หยุด auto-rejoin
@@ -278,7 +276,6 @@ POST /api/device/:id/disarm           → หยุด auto-rejoin
 - รันมาแล้วกี่นาที (จาก `session_start`)
 - rejoin กี่ครั้ง (`rejoin_count`)
 - avatar, ตัวละคร, แมพ (จาก Lua)
-- ภาพหน้าจออัปเดตทุก N นาที
 - ปุ่ม: เริ่ม/หยุด auto-rejoin, rejoin ทันที, ดูประวัติ
 
 ระดับผู้ใช้:
@@ -290,27 +287,13 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 
 ---
 
-## 12. ภาพหน้าจอ (Screenshots)
-
-- APK แคปทุก N นาที (N ตั้งค่าได้)
-- วิธีแคป:
-  - root → `su -c screencap` (ง่ายสุด)
-  - ไม่ root → `MediaProjection` (ขออนุญาตครั้งแรก) หรือ `Accessibility takeScreenshot` (Android 11+)
-- **ต้องย่อภาพ (thumbnail) + บีบอัด JPEG**
-- เก็บที่ **S3/MinIO** ไม่ใช่ DB
-- จำกัดอายุ เช่น 7 วัน (retention)
-- คำนึงถึงแบนด์วิดท์: 100 เครื่อง × ทุก 5 นาที ≈ 28,800 ภาพ/วัน
-
----
-
-## 13. สแตกเทคโนโลยี
+## 12. สแตกเทคโนโลยี
 
 | ชิ้น | เทคโนโลยี |
 |---|---|
 | Auth | Discord OAuth2 |
 | Backend | FastAPI (Python) หรือ NestJS (Node) |
 | DB | PostgreSQL + Redis (last_seen TTL / คิวคำสั่ง) |
-| Storage | MinIO / S3 (ภาพหน้าจอ) |
 | Realtime | WebSocket |
 | APK | Kotlin + Foreground Service + root + **file watcher** (อ่าน lua_state.json) + OkHttp |
 | Lua | ตัวรันเดิม + ส่ง heartbeat/state → APK |
@@ -324,13 +307,12 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 | เขียน `Delta/Autoexecute` | ✅ | ⚠️ Android 11+ ต้อง MANAGE_EXTERNAL_STORAGE |
 | เช็คเกมยังรัน | ✅ อ่าน process | ⚠️ UsageStatsManager |
 | กดปุ่มในเกม | ✅ `input tap` | ⚠️ AccessibilityService |
-| แคปภาพ | ✅ screencap | ⚠️ MediaProjection |
 
 → **แนะนำใช้ root** เพราะคลาวโฟนส่วนใหญ่เปิดได้ และเลี่ยงปัญหาสิทธิ์ทั้งหมด
 
 ---
 
-## 14. ขั้นตอนการใช้ (สำหรับลูกค้า)
+## 13. ขั้นตอนการใช้ (สำหรับลูกค้า)
 
 **ครั้งแรก (ทำครั้งเดียว)**
 1. เข้าเว็บ → ล็อกอินด้วย Discord → เข้าแดชบอร์ด (ไม่ต้องจำรหัส)
@@ -343,11 +325,11 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 6. รอสักครู่ → เว็บขึ้น "พร้อม"
 7. กด "เริ่ม auto-rejoin" บนเว็บ → ระบบเฝ้า 🟢
 
-**ระหว่างใช้** — แดชบอร์ดโชว์สถานะสด, runtime, rejoin count, avatar, ตัวละคร, แมพ, ภาพจอ
+**ระหว่างใช้** — แดชบอร์ดโชว์สถานะสด, runtime, rejoin count, avatar, ตัวละคร, แมพ
 
 ---
 
-## 15. แผนพัฒนาเป็นเฟส
+## 14. แผนพัฒนาเป็นเฟส
 
 ### เฟส 0 — เทสต์สมมติฐาน (สำคัญสุด) ✅ เสร็จแล้ว
 - [x] ยืนยัน path `Delta/Autoexecute` ใช้งานได้จริง → **ผ่าน** (`/storage/emulated/0/Delta/Autoexecute`)
@@ -368,7 +350,6 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 - [ ] แดชบอร์ดพื้นฐาน: สถานะ + ปุ่มเริ่ม auto-rejoin
 
 ### เฟส 2 — ใช้งานจริง
-- [ ] แคปภาพหน้าจอ + อัปโหลด + retention
 - [ ] avatar/ตัวละคร/แมพ จาก Lua
 - [ ] ประวัติ rejoin + นับครั้ง
 - [ ] แจ้งเตือน LINE/Telegram/Discord
@@ -383,7 +364,7 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 
 ---
 
-## 16. ความเสี่ยง
+## 15. ความเสี่ยง
 
 | ความเสี่ยง | รายละเอียด | แนวทางลด |
 |---|---|---|
@@ -393,18 +374,17 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 | APK ถูกระบบฆ่า | Doze/battery | Foreground Service + keep-alive + heartbeat ไปเว็บ |
 | Lua อ่านไฟล์/ยิง localhost ไม่ได้ | Delta **บล็อก loopback/LAN HTTP** (พิสูจน์แล้ว) แต่ยิงเน็ตออกได้ | ใช้ file-based IPC (เขียน state ลง workspace) — ยืนยันแล้วว่าทำงาน |
 | เกม anti-cheat | ตรวจ root/Accessibility | เทสต์กับเกมจริง |
-| แบนด์วิดท์ภาพจอ | ภาพเยอะมาก | thumbnail + JPEG + retention |
 
 ---
 
-## 17. สรุปประโยคเดียว
+## 16. สรุปประโยคเดียว
 
 > **Lua ส่งข้อมูลให้ APK → APK เติมรหัสเครื่องแล้วส่งเว็บ → เว็บโชว์แดชบอร์ดของเจ้าของรหัสนั้น
 > และ APK เฝ้าความเงียบของ Lua เพื่อรีเกมเองโดยไม่พึ่งเน็ต**
 
 ---
 
-## 18. ผลเทสต์ Phase 0 (สรุป — รายละเอียดใน `PHASE0_RESULTS.md`)
+## 17. ผลเทสต์ Phase 0 (สรุป — รายละเอียดใน `PHASE0_RESULTS.md`)
 
 ### เครื่องทดสอบ
 | รายการ | ค่า |

@@ -15,10 +15,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       COOKIE_SECURE: "true"
       DEV_AUTH: "false"
-      SCREENSHOT_DIR: /data/screenshots
       LUA_DIR: skeleton/lua
-    volumes:
-      - screenshots:/data/screenshots
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,6 +68,5 @@ services:
 volumes:
   pgdata:
   redisdata:
-  screenshots:
   caddydata:
   caddyconfig:

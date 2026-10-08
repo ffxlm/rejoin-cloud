@@ -4,7 +4,6 @@
     <string name="hint_code">รหัสเครื่อง (RJ-XXXXX-XXXXX)</string>
     <string name="hint_server">เซิร์ฟเวอร์ (http://…)</string>
     <string name="hint_place">placeId (เช่น 107778070777162)</string>
-    <string name="hint_shot">แคปหน้าจอทุกกี่วินาที (0 = ปิด)</string>
     <string name="btn_start">เริ่มเฝ้า (arm)</string>
     <string name="btn_stop">หยุดเฝ้า (disarm)</string>
     <string name="status_idle">ยังไม่ทำงาน</string>

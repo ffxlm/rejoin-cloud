@@ -4,25 +4,21 @@ routers/agent.py — endpoints ที่ APK เรียก (ยืนยัน
 - POST /api/agent/register     แลก device_code → device_token (ครั้งแรก)
 - POST /api/agent/heartbeat    ส่งสถานะ → คืนคำสั่ง (ถ้ามี)
 - POST /api/agent/event        บันทึก event (rejoin/alert/...)
-- POST /api/agent/screenshot   อัปโหลดภาพหน้าจอ (เก็บไฟล์ + ลง DB)
 """
 from __future__ import annotations
 
-import os
-import secrets
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import Settings
 from ..deps import get_current_device, get_db, get_settings, get_store
-from ..models import Device, DeviceState, DeviceToken, Event, Screenshot
+from ..models import Device, DeviceState, DeviceToken, Event
 from ..redis_store import Store
 from ..schemas import EventIn, HeartbeatIn, HeartbeatOut, RegisterIn, RegisterOut
-from ..screenshots import cleanup_old_screenshots, url_for
 from ..security import generate_token, hash_secret, lookup_key, verify_secret
 
 router = APIRouter()
@@ -140,62 +136,8 @@ async def agent_event(
     db: AsyncSession = Depends(get_db),
 ):
     db.add(Event(device_id=device.id, type=body.type, detail=body.detail or {}))
+    if body.type == "rejoin":
+        # ยอดสะสมตลอดชีพ — ไม่ผูกกับ retention ของ events
+        device.rejoin_total = (device.rejoin_total or 0) + 1
     await db.commit()
     return {"ok": True}
-
-
-@router.post("/api/agent/screenshot")
-async def screenshot(
-    file: UploadFile = File(...),
-    device: Device = Depends(get_current_device),
-    db: AsyncSession = Depends(get_db),
-    settings: Settings = Depends(get_settings),
-):
-    """รับภาพหน้าจอจาก APK (multipart) → เก็บไฟล์ + ลง DB + ลบของเก่าตาม retention"""
-    content_type = (file.content_type or "").lower()
-    ext = ".png" if "png" in content_type else ".jpg"
-    name = f"dev{device.id}_{int(time.time())}_{secrets.token_hex(3)}{ext}"
-    os.makedirs(settings.screenshot_dir, exist_ok=True)
-    path = os.path.join(settings.screenshot_dir, name)
-
-    # อ่านเป็น chunk กันไฟล์ยักษ์กลืน RAM
-    size = 0
-    try:
-        with open(path, "wb") as f:
-            while chunk := await file.read(64 * 1024):
-                size += len(chunk)
-                if size > settings.screenshot_max_bytes:
-                    raise HTTPException(status_code=413, detail="ไฟล์ใหญ่เกินกำหนด")
-                f.write(chunk)
-    except HTTPException:
-        _safe_remove(path)
-        raise
-    except Exception:
-        _safe_remove(path)
-        raise HTTPException(status_code=400, detail="รับไฟล์ไม่สำเร็จ")
-
-    if size == 0:
-        _safe_remove(path)
-        raise HTTPException(status_code=400, detail="ไฟล์ว่าง")
-
-    url = url_for(name)
-    row = Screenshot(device_id=device.id, url=url)
-    db.add(row)
-    await db.commit()
-    await db.refresh(row)
-
-    # ลบภาพที่เก่ากว่า retention (best-effort — ไม่ให้ล้มทั้ง request)
-    try:
-        await cleanup_old_screenshots(db, settings)
-    except Exception:
-        pass
-
-    return {"ok": True, "id": row.id, "url": url, "ts": int(row.ts.timestamp())}
-
-
-def _safe_remove(path: str) -> None:
-    try:
-        if os.path.isfile(path):
-            os.remove(path)
-    except OSError:
-        pass

@@ -54,7 +54,7 @@ $ADB devices                          # ต้องเห็น device
 - กด **"+ เพิ่มเครื่อง"** → ได้ **รหัสเครื่อง** `RJ-XXXXX-XXXXX` (จดไว้ — โชว์ครั้งเดียว)
 
 > production: คัดลอก `.env.example` → `.env`, ตั้ง `DATABASE_URL`/`REDIS_URL`/`DISCORD_*`
-> แล้วรัน `docker compose up -d` (pg/redis/minio) — ดู `.env.example`
+> แล้วรัน `docker compose up -d` (pg/redis) — ดู `.env.example`
 
 ## 4. รันตัวรีเกม (agent.py) — ใช้รหัสเครื่องจากข้อ 3
 ```bash

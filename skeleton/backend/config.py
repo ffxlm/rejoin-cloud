@@ -68,9 +68,11 @@ class Settings:
     # ---- ที่เก็บไฟล์ให้ดาวน์โหลด ----
     lua_dir: str = "skeleton/lua"
     apk_path: str = ""  # ว่าง = ยังไม่มี APK
-    screenshot_dir: str = "screenshots"
-    screenshot_retention_days: int = 7      # ลบภาพเก่ากว่านี้ (ไฟล์ + DB)
-    screenshot_max_bytes: int = 5 * 1024 * 1024  # กันอัปไฟล์ใหญ่เกิน
+
+    # ---- retention ของประวัติเหตุการณ์ (events) ----
+    event_retention_days: int = 30     # ลบเหตุการณ์ที่เก่ากว่านี้
+    event_max_per_device: int = 200    # เก็บต่อเครื่องไว้ไม่เกินกี่แถวล่าสุด
+    retention_interval_sec: int = 6 * 3600  # ทำงานลบของเก่าซ้ำทุกกี่วินาที
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -91,12 +93,14 @@ class Settings:
             runner_url=os.getenv("RUNNER_URL", cls.runner_url),
             lua_dir=os.getenv("LUA_DIR", cls.lua_dir),
             apk_path=os.getenv("APK_PATH", cls.apk_path),
-            screenshot_dir=os.getenv("SCREENSHOT_DIR", cls.screenshot_dir),
-            screenshot_retention_days=_env_int(
-                "SCREENSHOT_RETENTION_DAYS", cls.screenshot_retention_days
+            event_retention_days=_env_int(
+                "EVENT_RETENTION_DAYS", cls.event_retention_days
             ),
-            screenshot_max_bytes=_env_int(
-                "SCREENSHOT_MAX_BYTES", cls.screenshot_max_bytes
+            event_max_per_device=_env_int(
+                "EVENT_MAX_PER_DEVICE", cls.event_max_per_device
+            ),
+            retention_interval_sec=_env_int(
+                "RETENTION_INTERVAL_SEC", cls.retention_interval_sec
             ),
         )
 
