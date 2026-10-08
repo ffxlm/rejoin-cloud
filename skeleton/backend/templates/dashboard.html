@@ -3,102 +3,221 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rejoin — แดชบอร์ด</title>
+<title>ระบบกู้เกมอัตโนมัติ</title>
 <style>
-  body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:24px; }
-  h1 { color:#38bdf8; margin:0 0 4px; }
-  h2 { color:#38bdf8; margin-top:32px; font-size:18px; }
-  .top { display:flex; justify-content:space-between; align-items:center; }
-  .muted { color:#94a3b8; font-size:14px; }
-  table { border-collapse:collapse; width:100%; margin-top:12px; }
-  td,th { border:1px solid #334155; padding:8px 10px; text-align:left; font-size:14px; }
-  th { background:#1e293b; }
-  .pill { font-weight:700; }
-  .armed { color:#22c55e; } .lua_active { color:#eab308; }
-  .rejoining { color:#38bdf8; } .alert { color:#ef4444; } .offline { color:#64748b; }
-  button { cursor:pointer; border:0; border-radius:6px; padding:6px 12px; font-weight:600; }
-  .b-arm { background:#22c55e; color:#052e16; }
-  .b-disarm { background:#ef4444; color:#fff; }
-  .b-now { background:#334155; color:#e2e8f0; }
-  .b-add { background:#38bdf8; color:#082f49; padding:10px 18px; }
-  .code { background:#052e16; color:#86efac; padding:12px 16px; border-radius:8px;
-          font-family:monospace; font-size:18px; display:none; margin-top:12px; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, "Segoe UI", sans-serif; background:#0b1220; color:#e2e8f0;
+         margin:0; padding:0; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 20px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px;
+           padding:16px 20px; background:#111a2e; border-bottom:1px solid #1e293b;
+           position:sticky; top:0; z-index:10; }
+  .brand { font-size:19px; font-weight:800; color:#38bdf8; }
+  .brand small { display:block; font-size:12px; font-weight:400; color:#64748b; }
+  .who { font-size:13px; color:#94a3b8; margin-right:8px; }
+  .summary { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0; }
+  .stat { flex:1; min-width:150px; background:#111a2e; border:1px solid #1e293b;
+          border-radius:14px; padding:16px 18px; }
+  .stat .n { font-size:28px; font-weight:800; }
+  .stat .l { font-size:13px; color:#94a3b8; margin-top:2px; }
+  .card { background:#111a2e; border:1px solid #1e293b; border-radius:16px;
+          padding:18px 20px; margin-bottom:16px; }
+  .card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .dev-name { font-size:18px; font-weight:700; }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
+           border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap; }
+  .b-armed   { background:#052e16; color:#4ade80; }
+  .b-ready   { background:#3a2e05; color:#facc15; }
+  .b-rejoin  { background:#082f49; color:#38bdf8; }
+  .b-alert   { background:#3b0a0a; color:#f87171; }
+  .b-offline { background:#1e293b; color:#94a3b8; }
+  .b-game    { background:#3a2a05; color:#fbbf24; }
+  .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+          gap:10px; margin:16px 0; }
+  .meta .k { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.03em; }
+  .meta .v { font-size:15px; font-weight:600; margin-top:2px; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; }
+  button { cursor:pointer; border:0; border-radius:10px; padding:12px 18px;
+           font-weight:700; font-size:15px; font-family:inherit; }
+  .btn-start { background:#22c55e; color:#052e16; }
+  .btn-stop  { background:#ef4444; color:#fff; }
+  .btn-now   { background:#334155; color:#e2e8f0; }
+  .btn-ghost { background:transparent; color:#94a3b8; border:1px solid #334155; }
+  .btn-primary { background:#38bdf8; color:#082f49; }
+  .btn-danger-ghost { background:transparent; color:#f87171; border:1px solid #7f1d1d;
+                      padding:8px 12px; font-size:13px; }
+  .empty { text-align:center; padding:60px 20px; color:#64748b; }
+  .empty h2 { color:#cbd5e1; }
+  .help { background:#0e1a2b; border:1px dashed #334155; border-radius:14px;
+          padding:16px 20px; margin:16px 0; font-size:14px; color:#94a3b8; line-height:1.7; }
+  .help b { color:#e2e8f0; }
+  .code-box { background:#052e16; border:1px solid #166534; border-radius:14px;
+              padding:20px; margin:16px 0; display:none; }
+  .code-box .big { font-family:monospace; font-size:26px; font-weight:800; color:#86efac;
+                   letter-spacing:2px; margin:8px 0 12px; }
+  h2.sec { font-size:16px; color:#cbd5e1; margin:28px 0 12px; }
+  table { border-collapse:collapse; width:100%; }
+  td,th { border-bottom:1px solid #1e293b; padding:10px 8px; text-align:left; font-size:13px; }
+  th { color:#64748b; font-weight:600; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  input[type=text] { background:#0b1220; border:1px solid #334155; color:#e2e8f0;
+                     border-radius:10px; padding:11px 14px; font-size:15px; font-family:inherit; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+           background:#1e293b; color:#e2e8f0; padding:12px 20px; border-radius:10px;
+           display:none; z-index:50; }
 </style>
 </head>
 <body>
-  <div class="top">
-    <div>
-      <h1>Auto-Rejoin</h1>
-      <div class="muted">ผู้ใช้: {{ user.username or user.discord_id }}</div>
-    </div>
-    <div>
-      <button class="b-add" onclick="addDevice()">+ เพิ่มเครื่อง</button>
-      <button class="b-now" onclick="logout()">ออกจากระบบ</button>
+<header>
+  <div class="brand">ระบบกู้เกมอัตโนมัติ <small>เกมหลุดเมื่อไหร่ กู้ให้เองทันที</small></div>
+  <div class="row">
+    <span class="who">{{ user.username or user.discord_id }}</span>
+    <button class="btn-ghost" onclick="logout()">ออกจากระบบ</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="summary">
+    <div class="stat"><div class="n">{{ devices|length }}</div><div class="l">เครื่องทั้งหมด</div></div>
+    <div class="stat"><div class="n" style="color:#4ade80">{{ armed_count }}</div><div class="l">กำลังเฝ้าเกม</div></div>
+    <div class="stat"><div class="n" style="color:#f87171">{{ problem_count }}</div><div class="l">มีปัญหา</div></div>
+    <div class="stat"><div class="n" style="color:#38bdf8">{{ total_rejoins }}</div><div class="l">กู้เกมสำเร็จรวม</div></div>
+  </div>
+
+  <div class="help">
+    <b>ใช้งานยังไง?</b> เปิดแอปบนคลาวโฟน → กรอกรหัสเครื่อง → กด <b>“เริ่มเฝ้าเกม”</b> ในหน้านี้
+    <br>จากนั้นถ้าเกมหลุด ระบบจะเข้าเกมใหม่ให้เองอัตโนมัติ — ไม่ต้องเฝ้าเอง
+  </div>
+
+  <div class="code-box" id="codeBox">
+    <div style="font-size:14px;color:#86efac">✅ เพิ่มเครื่องแล้ว! นำรหัสนี้ไปกรอกในแอป (โชว์ครั้งเดียว — จดเก็บไว้)</div>
+    <div class="big" id="codeText">RJ-XXXXX-XXXXX</div>
+    <div class="row">
+      <button class="btn-primary" onclick="copyCode()">คัดลอกรหัส</button>
+      <span style="font-size:13px;color:#94a3b8">เปิดแอป “Rejoin Agent” บนคลาวโฟน → วางรหัส → กดเริ่ม</span>
     </div>
   </div>
 
-  <div id="newcode" class="code"></div>
+  <div class="row" style="justify-content:space-between;margin:20px 0 8px">
+    <h2 class="sec" style="margin:0">เครื่องของฉัน</h2>
+    <button class="btn-primary" onclick="addDevice()">+ เพิ่มเครื่อง</button>
+  </div>
 
-  <h2>เครื่องของฉัน ({{ devices|length }})</h2>
+  {% if not devices %}
+  <div class="empty">
+    <h2>ยังไม่มีเครื่อง</h2>
+    <p>กด “+ เพิ่มเครื่อง” เพื่อสร้างรหัส แล้วนำไปกรอกในแอปบนคลาวโฟน</p>
+  </div>
+  {% endif %}
+
+  {% for d in devices %}
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="dev-name">{{ d.name }}</div>
+        <div style="font-size:13px;color:#64748b;margin-top:2px">
+          อัปเดตล่าสุด {{ d.last_seen_age_sec if d.last_seen_age_sec is not none else '—' }} วินาทีที่แล้ว
+        </div>
+      </div>
+      {% if d.status == 'armed' %}
+        <span class="badge b-armed">🟢 กำลังเฝ้าเกม</span>
+      {% elif d.status == 'lua_active' %}
+        <span class="badge b-ready">🟡 พร้อมใช้งาน — กด “เริ่มเฝ้าเกม”</span>
+      {% elif d.status == 'rejoining' %}
+        <span class="badge b-rejoin">🔵 กำลังกู้เกม…</span>
+      {% elif d.status == 'alert' %}
+        <span class="badge b-alert">🔴 มีปัญหา — ต้องตรวจสอบ</span>
+      {% elif d.status == 'game_running' %}
+        <span class="badge b-game">🟠 เกมเปิดอยู่ ยังไม่ได้เฝ้า</span>
+      {% elif d.status == 'offline' %}
+        <span class="badge b-offline">⚫ ออฟไลน์ (เครื่องไม่ตอบ)</span>
+      {% else %}
+        <span class="badge b-offline">⚪ เชื่อมต่อแล้ว</span>
+      {% endif %}
+    </div>
+
+    <div class="meta">
+      <div><div class="k">เกม</div><div class="v">{{ '✅ เปิดอยู่' if d.game_running else '❌ ปิด' }}</div></div>
+      <div><div class="k">ตัวละคร</div><div class="v">{{ d.character or '—' }}</div></div>
+      <div><div class="k">แมพ</div><div class="v">{{ d.map or '—' }}</div></div>
+      <div><div class="k">กู้เกมแล้ว</div><div class="v">{{ d.rejoin_count }} ครั้ง</div></div>
+    </div>
+
+    <div class="actions">
+      {% if d.armed %}
+        <button class="btn-stop" onclick="cmd('{{ d.device_id }}','disarm')">หยุดเฝ้า</button>
+      {% else %}
+        <button class="btn-start" onclick="cmd('{{ d.device_id }}','arm')">เริ่มเฝ้าเกม</button>
+      {% endif %}
+      <button class="btn-now" onclick="cmd('{{ d.device_id }}','rejoin_now')">กู้เกมทันที</button>
+      <button class="btn-danger-ghost" onclick="removeDevice('{{ d.device_id }}','{{ d.name }}')">ลบเครื่อง</button>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if events %}
+  <h2 class="sec">ประวัติล่าสุด</h2>
   <table>
+    <tr><th>เวลา</th><th>เครื่อง</th><th>เหตุการณ์</th></tr>
+    {% for e in events %}
     <tr>
-      <th>ชื่อ</th><th>สถานะ</th><th>เกม</th><th>Lua</th><th>lua_state</th>
-      <th>avatar</th><th>ตัวละคร</th><th>แมพ</th><th>last_seen</th><th>rejoin</th><th>คำสั่ง</th>
-    </tr>
-    {% for d in devices %}
-    <tr>
-      <td>{{ d.name }}</td>
-      <td class="pill {{ d.status }}">● {{ d.status }}</td>
-      <td>{{ '✅' if d.game_running else '❌' }}</td>
-      <td>{{ '✅' if d.lua_active else '❌' }} {% if d.lua_age_sec is not none %}({{ d.lua_age_sec }}s){% endif %}</td>
-      <td>{{ d.lua_state or '-' }}</td>
-      <td>{{ d.avatar or '-' }}</td>
-      <td>{{ d.character or '-' }}</td>
-      <td>{{ d.map or '-' }}</td>
-      <td>{{ d.last_seen_age_sec if d.last_seen_age_sec is not none else '-' }}s</td>
-      <td>{{ d.rejoin_count }}</td>
+      <td style="color:#64748b">{{ e.ago }}</td>
+      <td>{{ e.device_name }}</td>
       <td>
-        <button class="b-arm" onclick="cmd('{{ d.device_id }}','arm')">arm</button>
-        <button class="b-disarm" onclick="cmd('{{ d.device_id }}','disarm')">disarm</button>
-        <button class="b-now" onclick="cmd('{{ d.device_id }}','rejoin_now')">rejoin</button>
+        {% if e.type == 'rejoin' %}🔄 กู้เกม (ครั้งที่ {{ e.detail.get('count','') }})
+        {% elif e.type == 'alert' %}🔴 กู้ไม่ได้ — ต้องตรวจสอบ
+        {% elif e.type == 'arm' %}▶️ เริ่มเฝ้า
+        {% elif e.type == 'disarm' %}⏹️ หยุดเฝ้า
+        {% elif e.type == 'rejoin_now' %}⚡ กู้เกมทันที (manual)
+        {% else %}{{ e.type }}{% endif %}
       </td>
     </tr>
     {% endfor %}
-    {% if not devices %}
-    <tr><td colspan="11" class="muted">ยังไม่มีเครื่อง — กด “เพิ่มเครื่อง”</td></tr>
-    {% endif %}
   </table>
+  {% endif %}
 
-  <h2>Events ล่าสุด</h2>
-  <table>
-    <tr><th>เวลา</th><th>เครื่อง</th><th>type</th><th>detail</th></tr>
-    {% for e in events %}
-    <tr><td>{{ e.ts }}</td><td>{{ e.device_id }}</td><td>{{ e.type }}</td><td>{{ e.detail }}</td></tr>
-    {% endfor %}
-    {% if not events %}
-    <tr><td colspan="4" class="muted">ยังไม่มี event</td></tr>
-    {% endif %}
-  </table>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
 async function cmd(id, action) {
+  const labels = {arm:'เริ่มเฝ้าเกม', disarm:'หยุดเฝ้า', rejoin_now:'กู้เกมทันที'};
+  if (action === 'disarm' && !confirm('หยุดเฝ้าเกม? ระบบจะไม่กู้เกมให้จนกว่าจะเริ่มใหม่')) return;
   const r = await fetch(`/api/device/${id}/${action}`, {method:'POST'});
-  if (!r.ok) alert('ผิดพลาด: ' + (await r.text()));
-  setTimeout(() => location.reload(), 400);
+  if (!r.ok) { toast('ทำรายการไม่สำเร็จ'); return; }
+  toast('สั่ง ' + labels[action] + ' แล้ว — รอสักครู่');
+  setTimeout(() => location.reload(), 1500);
 }
 async function addDevice() {
-  const name = prompt('ตั้งชื่อเครื่อง:', 'เครื่องใหม่');
+  const name = prompt('ตั้งชื่อเครื่อง (เช่น เครื่อง 1 / ไอดีหลัก):', 'เครื่องใหม่');
   if (name === null) return;
   const r = await fetch('/api/me/devices', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({name})
   });
-  if (!r.ok) { alert('ผิดพลาด: ' + (await r.text())); return; }
+  if (!r.ok) { toast('เพิ่มเครื่องไม่สำเร็จ'); return; }
   const d = await r.json();
-  const el = document.getElementById('newcode');
-  el.style.display = 'block';
-  el.innerHTML = 'รหัสเครื่อง (กรอกใน APK ครั้งเดียว): <b>' + d.device_code + '</b>';
-  setTimeout(() => location.reload(), 6000);
+  document.getElementById('codeText').textContent = d.device_code;
+  const box = document.getElementById('codeBox');
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth'});
+}
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('codeText').textContent)
+    .then(() => toast('คัดลอกรหัสแล้ว'));
+}
+async function removeDevice(id, name) {
+  if (!confirm('ลบเครื่อง “' + name + '”? รหัสเครื่องจะใช้ไม่ได้อีก')) return;
+  const r = await fetch(`/api/me/devices/${id}`, {method:'DELETE'});
+  if (r.ok) { toast('ลบแล้ว'); setTimeout(() => location.reload(), 800); }
+  else toast('ลบไม่สำเร็จ');
 }
 async function logout() {
   await fetch('/auth/logout', {method:'POST'});

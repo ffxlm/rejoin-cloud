@@ -135,17 +135,46 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         ).scalars().all() if devices else []
 
+        # ---- สรุปภาพรวม (ภาษาคน) ----
+        import time as _time
+        now = int(_time.time())
+        name_by_id = {d.id: d.name for d in devices}
+        armed_count = sum(1 for v in views if v["status"] == "armed")
+        problem_count = sum(1 for v in views if v["status"] in ("alert", "offline"))
+        total_rejoins = sum(v["rejoin_count"] for v in views)
+
+        def _ago(ts: int) -> str:
+            sec = max(0, now - ts)
+            if sec < 60:
+                return f"{sec} วินาทีที่แล้ว"
+            if sec < 3600:
+                return f"{sec // 60} นาทีที่แล้ว"
+            if sec < 86400:
+                return f"{sec // 3600} ชั่วโมงที่แล้ว"
+            return f"{sec // 86400} วันที่แล้ว"
+
+        event_views = [
+            {
+                "type": e.type,
+                "device_id": str(e.device_id),
+                "device_name": name_by_id.get(e.device_id, f"เครื่อง {e.device_id}"),
+                "ts": int(e.ts.timestamp()),
+                "ago": _ago(int(e.ts.timestamp())),
+                "detail": e.detail or {},
+            }
+            for e in events
+        ]
+
         return templates.TemplateResponse(
             request,
             "dashboard.html",
             {
                 "user": user_public(user),
                 "devices": views,
-                "events": [
-                    {"type": e.type, "device_id": str(e.device_id),
-                     "ts": int(e.ts.timestamp()), "detail": e.detail or {}}
-                    for e in events
-                ],
+                "events": event_views,
+                "armed_count": armed_count,
+                "problem_count": problem_count,
+                "total_rejoins": total_rejoins,
                 "discord_enabled": settings.discord_enabled,
                 "dev_auth": settings.dev_auth,
             },
