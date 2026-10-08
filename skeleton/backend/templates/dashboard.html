@@ -3,314 +3,753 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ระบบกู้เกมอัตโนมัติ</title>
+<meta name="color-scheme" content="dark">
+<title>Rejoin — ระบบกู้เกมอัตโนมัติ</title>
 <style>
-  * { box-sizing: border-box; }
-  :root {
-    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1729; --line:#1e293b;
-    --txt:#e2e8f0; --muted:#94a3b8; --dim:#64748b; --accent:#38bdf8;
-    --green:#4ade80; --red:#f87171; --amber:#facc15; --blue:#38bdf8;
+  *{box-sizing:border-box}
+  :root{
+    --bg:#080d17; --bg-2:#0b1220; --card:#111a2b; --card-2:#0e1626; --card-3:#16213a;
+    --line:#22304a; --line-2:#1a2438;
+    --txt:#eaf0f8; --muted:#93a2bb; --dim:#64748b;
+    --accent:#4f8cff; --accent-2:#22d3a6;
+    --green:#34d399; --amber:#fbbf24; --red:#f87171; --blue:#60a5fa; --slate:#94a3b8;
+    --radius:18px;
   }
-  body { font-family: system-ui, "Segoe UI", "Noto Sans Thai", sans-serif;
-         background:radial-gradient(1200px 600px at 70% -10%, #14203a 0%, var(--bg) 55%);
-         color:var(--txt); margin:0; padding:0; min-height:100vh; }
-  .wrap { max-width: 1040px; margin: 0 auto; padding: 20px; }
-  header { display:flex; justify-content:space-between; align-items:center; gap:12px;
-           padding:16px 20px; background:rgba(17,26,46,.9); backdrop-filter:blur(8px);
-           border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
-  .brand { font-size:19px; font-weight:800; color:var(--accent); }
-  .brand small { display:block; font-size:12px; font-weight:400; color:var(--dim); }
-  .who { font-size:13px; color:var(--muted); margin-right:8px; }
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--txt); min-height:100vh;
+    font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1100px 520px at 78% -12%, #17233f 0%, transparent 58%),
+      radial-gradient(760px 420px at 4% 4%, #10203a 0%, transparent 52%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  a{color:var(--accent);text-decoration:none}
+  ::selection{background:#2b4a86;color:#fff}
 
-  .summary { display:flex; gap:12px; flex-wrap:wrap; margin:22px 0; }
-  .stat { flex:1; min-width:150px; background:linear-gradient(180deg,#14203a,#0f1830);
-          border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
-  .stat .n { font-size:28px; font-weight:800; }
-  .stat .l { font-size:13px; color:var(--muted); margin-top:2px; }
+  /* ---------- icons ---------- */
+  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;
+      stroke-linecap:round;stroke-linejoin:round;vertical-align:-.13em;flex:none}
+  .ic.fill{fill:currentColor;stroke:none}
 
-  .help { background:var(--panel2); border:1px dashed #334155; border-radius:14px;
-          padding:16px 20px; margin:16px 0; font-size:14px; color:var(--muted); line-height:1.7; }
-  .help b { color:var(--txt); }
+  /* ---------- top bar ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:30;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:13px 22px;
+    background:rgba(8,13,23,.82); backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line-2);
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .logo{
+    width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(145deg,#4f8cff,#22d3a6); color:#04121f; font-size:19px;
+    box-shadow:0 8px 22px -10px #4f8cff;
+  }
+  .brand h1{margin:0;font-size:16px;font-weight:800;letter-spacing:-.2px}
+  .brand p{margin:1px 0 0;font-size:11.5px;color:var(--dim)}
+  .top-right{display:flex;align-items:center;gap:10px}
+  .userchip{display:flex;align-items:center;gap:9px;padding:5px 12px 5px 5px;
+            background:var(--card);border:1px solid var(--line);border-radius:999px}
+  .userchip .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+                font-size:13px;font-weight:800;color:#04121f;
+                background:linear-gradient(145deg,#8ab4ff,#22d3a6)}
+  .userchip span{font-size:13px;font-weight:600;color:var(--muted);max-width:130px;
+                 overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-  .code-box { background:#052e16; border:1px solid #166534; border-radius:14px;
-              padding:20px; margin:16px 0; display:none; }
-  .code-box .big { font-family:monospace; font-size:26px; font-weight:800; color:#86efac;
-                   letter-spacing:2px; margin:8px 0 12px; }
+  /* ---------- layout ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 22px 70px}
 
-  h2.sec { font-size:16px; color:#cbd5e1; margin:28px 0 14px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .toprow { display:flex; justify-content:space-between; align-items:center;
-            gap:12px; flex-wrap:wrap; margin:24px 0 14px; }
-  .toprow h2 { margin:0; font-size:16px; color:#cbd5e1; }
+  /* ---------- stat cards ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:4px 0 26px}
+  .stat{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--card),var(--card-2));
+        border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px}
+  .stat::after{content:"";position:absolute;inset:0 auto auto 0;height:3px;width:100%;
+               background:linear-gradient(90deg,var(--c),transparent);opacity:.9}
+  .stat .icw{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+             font-size:17px;margin-bottom:12px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+  .stat .n{font-size:27px;font-weight:800;line-height:1;letter-spacing:-.5px}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:6px}
 
-  /* ---- การ์ดต่อเครื่อง ---- */
-  .dev { background:linear-gradient(180deg,#131e34,#0f1830); border:1px solid var(--line);
-         border-radius:20px; padding:0; margin-bottom:22px; overflow:hidden;
-         box-shadow:0 10px 30px -18px #000; }
-  .dev-head { display:flex; justify-content:space-between; align-items:flex-start;
-              gap:12px; padding:18px 20px 14px; flex-wrap:wrap;
-              border-bottom:1px solid var(--line); background:rgba(20,32,58,.5); }
-  .dev-name { font-size:19px; font-weight:800; display:flex; align-items:center; gap:10px; }
-  .dev-id { font-size:12px; color:var(--dim); font-weight:500; }
-  .dev-sub { font-size:13px; color:var(--dim); margin-top:4px; }
-  .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
-           border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap; }
-  .b-armed   { background:#052e16; color:var(--green); }
-  .b-ready   { background:#3a2e05; color:var(--amber); }
-  .b-rejoin  { background:#082f49; color:var(--blue); }
-  .b-alert   { background:#3b0a0a; color:var(--red); }
-  .b-offline { background:#1e293b; color:var(--muted); }
-  .b-game    { background:#3a2a05; color:#fbbf24; }
+  /* ---------- onboarding ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+  .step{display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border-radius:16px;
+        background:var(--card-2);border:1px solid var(--line-2)}
+  .step .num{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;
+             font-size:13px;font-weight:800;background:rgba(79,140,255,.15);color:var(--accent);
+             border:1px solid rgba(79,140,255,.35)}
+  .step b{display:block;font-size:13.5px;margin-bottom:2px}
+  .step span{font-size:12.5px;color:var(--muted);line-height:1.5}
 
-  .dev-body { padding:16px 20px 20px; }
-  .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-          gap:10px; margin:0 0 16px; }
-  .meta .k { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.03em; }
-  .meta .v { font-size:15px; font-weight:600; margin-top:2px; }
+  /* ---------- section head ---------- */
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 16px}
+  .sec-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.2px;
+               display:flex;align-items:center;gap:9px}
+  .sec-head .count{font-size:12px;font-weight:600;color:var(--dim);background:var(--card);
+                   border:1px solid var(--line);border-radius:999px;padding:2px 10px}
 
-  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
-  button { cursor:pointer; border:0; border-radius:10px; padding:12px 18px;
-           font-weight:700; font-size:15px; font-family:inherit; transition:filter .15s; }
-  button:hover { filter:brightness(1.1); }
-  .btn-start { background:#22c55e; color:#052e16; }
-  .btn-stop  { background:#ef4444; color:#fff; }
-  .btn-now   { background:#334155; color:var(--txt); }
-  .btn-shot  { background:#0ea5e9; color:#082f49; }
-  .btn-ghost { background:transparent; color:var(--muted); border:1px solid #334155; }
-  .btn-primary { background:var(--accent); color:#082f49; }
-  .btn-danger-ghost { background:transparent; color:var(--red); border:1px solid #7f1d1d;
-                      padding:8px 12px; font-size:13px; }
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+       border:1px solid transparent;border-radius:11px;padding:11px 16px;
+       font:inherit;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;
+       transition:filter .15s,transform .12s,border-color .15s,background .15s}
+  .btn .ic{width:17px;height:17px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn.primary{background:linear-gradient(180deg,#5b93ff,#3f74e0);color:#fff;
+               box-shadow:0 10px 24px -12px #4f8cff}
+  .btn.success{background:linear-gradient(180deg,#2fd6a0,#17b98a);color:#04271d;
+               box-shadow:0 10px 24px -12px #22d3a6}
+  .btn.danger{background:linear-gradient(180deg,#f2686a,#dd4444);color:#fff}
+  .btn.soft{background:var(--card-3);color:var(--txt);border-color:var(--line)}
+  .btn.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+  .btn.ghost:hover{color:var(--txt);border-color:#3a4b68}
+  .btn.icon{padding:11px}
+  .btn[disabled]{opacity:.5;cursor:not-allowed;filter:none;transform:none}
+  .btn.loading{pointer-events:none;opacity:.7}
 
-  .cols { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-top:18px; }
-  @media (max-width:760px) { .cols { grid-template-columns:1fr; } }
-  .sub { font-size:12px; font-weight:700; color:var(--dim); text-transform:uppercase;
-         letter-spacing:.05em; margin-bottom:10px; display:flex; justify-content:space-between; }
+  /* ---------- device card ---------- */
+  .device{background:linear-gradient(180deg,var(--card),var(--card-2));
+          border:1px solid var(--line);border-radius:var(--radius);
+          padding:18px 20px;margin-bottom:18px;
+          box-shadow:0 24px 50px -40px #000}
+  .dev-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .dev-name{display:flex;align-items:center;gap:10px;min-width:0}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--slate)}
+  .dot.armed{background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.15);animation:pulse 2s infinite}
+  .dot.rejoining{background:var(--blue);box-shadow:0 0 0 4px rgba(96,165,250,.15);animation:pulse 1.2s infinite}
+  .dot.alert{background:var(--red);box-shadow:0 0 0 4px rgba(248,113,113,.15)}
+  .dot.lua_active,.dot.game_running{background:var(--amber);box-shadow:0 0 0 4px rgba(251,191,36,.13)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .dev-name h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.2px;
+               overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dev-id{font-size:12px;font-weight:600;color:var(--dim);background:var(--bg-2);
+          border:1px solid var(--line-2);border-radius:7px;padding:2px 7px}
+  .dev-sub{font-size:12.5px;color:var(--dim);margin-top:7px;display:flex;gap:14px;flex-wrap:wrap}
+  .dev-sub .ic{width:13px;height:13px;vertical-align:-.15em;margin-right:4px}
 
-  .shots { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
-  .shot { background:#0b1220; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
-  .shot a { display:block; line-height:0; }
-  .shot img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#0b1220; }
-  .shot .cap { padding:6px 8px; font-size:11px; color:var(--muted); display:flex;
-               justify-content:space-between; gap:6px; align-items:center; }
-  .shot .cap .del { color:var(--red); cursor:pointer; border:0; background:transparent;
-                    font-size:11px; padding:2px 4px; }
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;
+         font-size:13px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .badge .ic{width:15px;height:15px}
+  .b-armed{background:rgba(52,211,153,.12);color:var(--green);border-color:rgba(52,211,153,.3)}
+  .b-ready{background:rgba(251,191,36,.12);color:var(--amber);border-color:rgba(251,191,36,.3)}
+  .b-rejoin{background:rgba(96,165,250,.12);color:var(--blue);border-color:rgba(96,165,250,.3)}
+  .b-alert{background:rgba(248,113,113,.12);color:var(--red);border-color:rgba(248,113,113,.3)}
+  .b-game{background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.25)}
+  .b-offline{background:rgba(148,163,184,.1);color:var(--slate);border-color:rgba(148,163,184,.22)}
+  .b-conn{background:rgba(79,140,255,.12);color:var(--accent);border-color:rgba(79,140,255,.3)}
 
-  .evlist { display:flex; flex-direction:column; gap:8px; }
-  .ev { display:flex; gap:10px; align-items:flex-start; font-size:13px;
-        background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
-  .ev .t { color:var(--dim); font-size:11px; white-space:nowrap; min-width:74px; }
-  .none { font-size:13px; color:var(--dim); background:var(--panel2); border:1px dashed var(--line);
-          border-radius:10px; padding:14px; text-align:center; }
+  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+  .mi{display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:13px;
+      background:var(--bg-2);border:1px solid var(--line-2);min-width:0}
+  .mi .icw{width:32px;height:32px;border-radius:9px;flex:none;display:grid;place-items:center;
+           font-size:16px;background:rgba(79,140,255,.1);color:var(--accent)}
+  .mi .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+  .mi .v{font-size:14px;font-weight:700;margin-top:1px;overflow:hidden;
+         text-overflow:ellipsis;white-space:nowrap}
+  .mi .v.ok{color:var(--green)} .mi .v.no{color:var(--red)}
 
-  .empty { text-align:center; padding:60px 20px; color:var(--dim); }
-  .empty h2 { color:#cbd5e1; }
-  input[type=text] { background:var(--bg); border:1px solid #334155; color:var(--txt);
-                     border-radius:10px; padding:11px 14px; font-size:15px; font-family:inherit; }
-  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-           background:#1e293b; color:var(--txt); padding:12px 20px; border-radius:10px;
-           display:none; z-index:50; }
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+           padding-top:16px;border-top:1px solid var(--line-2)}
+  .actions .spacer{flex:1}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:2px;margin-top:18px;border-bottom:1px solid var(--line-2)}
+  .tab{display:inline-flex;align-items:center;gap:7px;background:none;border:0;
+       border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-weight:700;
+       font-size:13px;padding:10px 14px;cursor:pointer;margin-bottom:-1px}
+  .tab .ic{width:15px;height:15px}
+  .tab:hover{color:var(--txt)}
+  .tab.active{color:var(--txt);border-bottom-color:var(--accent)}
+  .tab .pill{font-size:11px;font-weight:700;color:var(--dim);background:var(--bg-2);
+             border:1px solid var(--line-2);border-radius:999px;padding:0 7px}
+  .pane{padding-top:15px}
+  .pane[hidden]{display:none}
+
+  /* ---------- screenshots ---------- */
+  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .shot{position:relative;background:var(--bg-2);border:1px solid var(--line-2);
+        border-radius:13px;overflow:hidden}
+  .shot a{display:block;line-height:0}
+  .shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#05080f;
+            transition:transform .25s}
+  .shot:hover img{transform:scale(1.04)}
+  .shot .cap{display:flex;align-items:center;justify-content:space-between;gap:6px;
+             padding:7px 9px;font-size:11px;color:var(--muted)}
+  .shot .del{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;
+             border:1px solid transparent;background:transparent;color:var(--dim);cursor:pointer}
+  .shot .del:hover{color:var(--red);background:rgba(248,113,113,.12)}
+  .shot .del .ic{width:13px;height:13px}
+
+  /* ---------- events ---------- */
+  .evlist{display:flex;flex-direction:column;gap:8px}
+  .ev{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:12px;
+      background:var(--bg-2);border:1px solid var(--line-2)}
+  .evic{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;
+        font-size:15px;background:rgba(148,163,184,.1);color:var(--slate)}
+  .evic .ic{width:16px;height:16px}
+  .ev-rejoin .evic{background:rgba(52,211,153,.12);color:var(--green)}
+  .ev-alert .evic{background:rgba(248,113,113,.12);color:var(--red)}
+  .ev-arm .evic{background:rgba(79,140,255,.12);color:var(--accent)}
+  .ev-disarm .evic{background:rgba(148,163,184,.12);color:var(--slate)}
+  .ev-rejoin_now .evic{background:rgba(251,191,36,.12);color:var(--amber)}
+  .ev-screenshot_now .evic{background:rgba(96,165,250,.12);color:var(--blue)}
+  .evtxt{font-size:13px;font-weight:600;flex:1;min-width:0}
+  .evtime{font-size:11.5px;color:var(--dim);white-space:nowrap}
+
+  .none{display:flex;flex-direction:column;align-items:center;gap:8px;
+        font-size:13px;color:var(--dim);background:var(--bg-2);
+        border:1px dashed var(--line);border-radius:13px;padding:26px 16px;text-align:center}
+  .none .ic{width:22px;height:22px;color:var(--line)}
+
+  /* ---------- empty state ---------- */
+  .empty{display:flex;flex-direction:column;align-items:center;text-align:center;
+         padding:56px 22px;background:var(--card-2);border:1px dashed var(--line);
+         border-radius:var(--radius)}
+  .empty .big{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;
+              font-size:30px;color:var(--accent);background:rgba(79,140,255,.1);
+              border:1px solid rgba(79,140,255,.25);margin-bottom:16px}
+  .empty h2{margin:0 0 6px;font-size:18px;color:var(--txt)}
+  .empty p{margin:0 0 20px;font-size:13.5px;color:var(--muted);max-width:380px}
+
+  /* ---------- modal ---------- */
+  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+         padding:20px;background:rgba(4,8,15,.66);backdrop-filter:blur(4px)}
+  .modal.open{display:flex;animation:fade .15s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal-card{width:100%;max-width:430px;background:linear-gradient(180deg,var(--card),var(--card-2));
+              border:1px solid var(--line);border-radius:20px;padding:26px;
+              box-shadow:0 40px 90px -40px #000;animation:pop .18s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+  .modal-card h3{margin:0 0 6px;font-size:18px;font-weight:800}
+  .modal-card p{margin:0 0 18px;font-size:13.5px;color:var(--muted);line-height:1.6}
+  .modal-card label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:7px}
+  .modal-ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
+            font-size:25px;margin-bottom:16px}
+  .modal-ic.ok{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+  .modal-ic.warn{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+  .modal-ic .ic{width:26px;height:26px}
+  input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);
+                   border-radius:11px;padding:12px 14px;font-size:15px;font-family:inherit}
+  input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,140,255,.18)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .code{display:flex;align-items:center;justify-content:center;gap:10px;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:22px;font-weight:800;
+        letter-spacing:2px;color:#7ef0c2;background:rgba(34,211,166,.08);
+        border:1px solid rgba(34,211,166,.3);border-radius:14px;padding:18px 14px;
+        margin:4px 0 6px;word-break:break-all;text-align:center}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);z-index:80;
+         display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:13px;
+         background:#1b2740;border:1px solid var(--line);color:var(--txt);font-size:13.5px;
+         font-weight:600;box-shadow:0 20px 50px -20px #000;opacity:0;pointer-events:none;
+         transition:opacity .2s,transform .2s;max-width:92vw}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast .ic{width:17px;height:17px;color:var(--accent-2)}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:820px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .meta{grid-template-columns:repeat(2,1fr)}
+    .steps{grid-template-columns:1fr}
+  }
+  @media(max-width:560px){
+    .wrap{padding:18px 14px 60px}
+    header.topbar{padding:11px 14px}
+    .brand p{display:none}
+    .userchip span{display:none}
+    .device{padding:16px}
+    .dev-name h3{font-size:16px}
+    .actions .btn{flex:1 1 auto}
+    .actions .spacer{display:none}
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">ระบบกู้เกมอัตโนมัติ <small>เกมหลุดเมื่อไหร่ กู้ให้เองทันที</small></div>
-  <div class="row">
-    <span class="who">{{ user.username or user.discord_id }}</span>
-    <button class="btn-ghost" onclick="logout()">ออกจากระบบ</button>
+
+<!-- ============ SVG icon sprite (เลิกใช้อีโมจิที่แสดงผลไม่แน่นอน) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-gamepad" viewBox="0 0 24 24"><line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><rect x="2" y="6" width="20" height="12" rx="6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></symbol>
+</defs></svg>
+
+{% macro status_badge(status) -%}
+{%- if status == 'armed' -%}<span class="badge b-armed js-status"><svg class="ic"><use href="#i-shield"/></svg>กำลังเฝ้าเกม</span>
+{%- elif status == 'lua_active' -%}<span class="badge b-ready js-status"><svg class="ic"><use href="#i-check"/></svg>พร้อมใช้งาน</span>
+{%- elif status == 'rejoining' -%}<span class="badge b-rejoin js-status"><svg class="ic"><use href="#i-refresh"/></svg>กำลังกู้เกม</span>
+{%- elif status == 'alert' -%}<span class="badge b-alert js-status"><svg class="ic"><use href="#i-alert"/></svg>มีปัญหา</span>
+{%- elif status == 'game_running' -%}<span class="badge b-game js-status"><svg class="ic"><use href="#i-gamepad"/></svg>เกมเปิดอยู่</span>
+{%- elif status == 'offline' -%}<span class="badge b-offline js-status"><svg class="ic"><use href="#i-wifi"/></svg>ออฟไลน์</span>
+{%- else -%}<span class="badge b-conn js-status"><svg class="ic"><use href="#i-wifi"/></svg>เชื่อมต่อแล้ว</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro ev_icon(t) -%}
+{%- if t == 'rejoin' -%}<svg class="ic"><use href="#i-refresh"/></svg>
+{%- elif t == 'alert' -%}<svg class="ic"><use href="#i-alert"/></svg>
+{%- elif t == 'arm' -%}<svg class="ic"><use href="#i-play"/></svg>
+{%- elif t == 'disarm' -%}<svg class="ic"><use href="#i-stop"/></svg>
+{%- elif t == 'rejoin_now' -%}<svg class="ic"><use href="#i-zap"/></svg>
+{%- elif t == 'screenshot_now' -%}<svg class="ic"><use href="#i-camera"/></svg>
+{%- else -%}<svg class="ic"><use href="#i-activity"/></svg>
+{%- endif -%}
+{%- endmacro %}
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo"><svg class="ic" style="width:20px;height:20px;stroke-width:2.4"><use href="#i-refresh"/></svg></span>
+    <div>
+      <h1>Rejoin</h1>
+      <p>ระบบกู้เกมอัตโนมัติ</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="userchip">
+      <span class="av">{{ (user.username or user.discord_id or '?')[0]|upper }}</span>
+      <span>{{ user.username or user.discord_id }}</span>
+    </div>
+    <button class="btn ghost icon" title="ออกจากระบบ" aria-label="ออกจากระบบ" onclick="logout()">
+      <svg class="ic"><use href="#i-logout"/></svg>
+    </button>
   </div>
 </header>
 
 <div class="wrap">
 
-  <div class="summary">
-    <div class="stat"><div class="n">{{ devices|length }}</div><div class="l">เครื่องทั้งหมด</div></div>
-    <div class="stat"><div class="n" style="color:#4ade80">{{ armed_count }}</div><div class="l">กำลังเฝ้าเกม</div></div>
-    <div class="stat"><div class="n" style="color:#f87171">{{ problem_count }}</div><div class="l">มีปัญหา</div></div>
-    <div class="stat"><div class="n" style="color:#38bdf8">{{ total_rejoins }}</div><div class="l">กู้เกมสำเร็จรวม</div></div>
-  </div>
-
-  <div class="help">
-    <b>ใช้งานยังไง?</b> เปิดแอปบนคลาวโฟน → กรอกรหัสเครื่อง → กด <b>“เริ่มเฝ้าเกม”</b> ในหน้านี้
-    <br>จากนั้นถ้าเกมหลุด ระบบจะเข้าเกมใหม่ให้เองอัตโนมัติ — ไม่ต้องเฝ้าเอง
-  </div>
-
-  <div class="code-box" id="codeBox">
-    <div style="font-size:14px;color:#86efac">✅ เพิ่มเครื่องแล้ว! นำรหัสนี้ไปกรอกในแอป (โชว์ครั้งเดียว — จดเก็บไว้)</div>
-    <div class="big" id="codeText">RJ-XXXXX-XXXXX</div>
-    <div class="row">
-      <button class="btn-primary" onclick="copyCode()">คัดลอกรหัส</button>
-      <span style="font-size:13px;color:#94a3b8">เปิดแอป “Rejoin Agent” บนคลาวโฟน → วางรหัส → กดเริ่ม</span>
+  <!-- ---------- ภาพรวม ---------- -->
+  <section class="stats">
+    <div class="stat" style="--c:#60a5fa">
+      <div class="icw"><svg class="ic"><use href="#i-monitor"/></svg></div>
+      <div class="n" id="statDevices">{{ devices|length }}</div>
+      <div class="l">เครื่องทั้งหมด</div>
     </div>
-  </div>
+    <div class="stat" style="--c:#34d399">
+      <div class="icw"><svg class="ic"><use href="#i-shield"/></svg></div>
+      <div class="n" id="statArmed">{{ armed_count }}</div>
+      <div class="l">กำลังเฝ้าเกม</div>
+    </div>
+    <div class="stat" style="--c:#f87171">
+      <div class="icw"><svg class="ic"><use href="#i-alert"/></svg></div>
+      <div class="n" id="statProblem">{{ problem_count }}</div>
+      <div class="l">มีปัญหา</div>
+    </div>
+    <div class="stat" style="--c:#22d3a6">
+      <div class="icw"><svg class="ic"><use href="#i-refresh"/></svg></div>
+      <div class="n" id="statRejoins">{{ total_rejoins }}</div>
+      <div class="l">กู้เกมสำเร็จรวม</div>
+    </div>
+  </section>
 
-  <div class="toprow">
-    <h2>เครื่องของฉัน</h2>
-    <button class="btn-primary" onclick="addDevice()">+ เพิ่มเครื่อง</button>
+  <!-- ---------- วิธีใช้งาน ---------- -->
+  <section class="steps">
+    <div class="step">
+      <span class="num">1</span>
+      <div><b>เพิ่มเครื่อง</b><span>กด “เพิ่มเครื่อง” แล้วจดรหัสที่ระบบให้ (แสดงครั้งเดียว)</span></div>
+    </div>
+    <div class="step">
+      <span class="num">2</span>
+      <div><b>กรอกรหัสในแอป</b><span>เปิดแอป Rejoin บนคลาวโฟน → วางรหัส → กดเริ่ม</span></div>
+    </div>
+    <div class="step">
+      <span class="num">3</span>
+      <div><b>เริ่มเฝ้าเกม</b><span>รอสถานะขึ้น “พร้อมใช้งาน” แล้วกด “เริ่มเฝ้าเกม” — จบ</span></div>
+    </div>
+  </section>
+
+  <div class="sec-head">
+    <h2><svg class="ic" style="width:17px;height:17px;color:var(--accent)"><use href="#i-smartphone"/></svg>
+      เครื่องของฉัน
+      {% if panels %}<span class="count">{{ panels|length }}</span>{% endif %}
+    </h2>
+    <button class="btn primary" onclick="openAdd()">
+      <svg class="ic"><use href="#i-plus"/></svg> เพิ่มเครื่อง
+    </button>
   </div>
 
   {% if not panels %}
   <div class="empty">
+    <div class="big"><svg class="ic" style="width:30px;height:30px"><use href="#i-smartphone"/></svg></div>
     <h2>ยังไม่มีเครื่อง</h2>
-    <p>กด “+ เพิ่มเครื่อง” เพื่อสร้างรหัส แล้วนำไปกรอกในแอปบนคลาวโฟน</p>
+    <p>เพิ่มเครื่องเพื่อรับรหัส แล้วนำไปกรอกในแอปบนคลาวโฟน ระบบจะเริ่มเฝ้าเกมให้เอง</p>
+    <button class="btn primary" onclick="openAdd()">
+      <svg class="ic"><use href="#i-plus"/></svg> เพิ่มเครื่องแรก
+    </button>
   </div>
   {% endif %}
 
   {% for d in panels %}
-  <section class="dev">
-    <div class="dev-head">
+  <section class="device" data-device="{{ d.device_id }}" data-armed="{{ 'true' if d.armed else 'false' }}">
+    <div class="dev-top">
       <div>
         <div class="dev-name">
-          {{ d.name }}
+          <span class="dot {{ d.status }} js-dot"></span>
+          <h3>{{ d.name }}</h3>
           <span class="dev-id">#{{ d.device_id }}</span>
         </div>
         <div class="dev-sub">
-          อัปเดตล่าสุด {{ d.last_seen_ago or '—' }}
-          {% if d.session_start_ago %} · เริ่มเฝ้า {{ d.session_start_ago }}{% endif %}
+          <span><svg class="ic"><use href="#i-clock"/></svg>อัปเดตล่าสุด <span class="js-lastseen" data-age="{{ d.last_seen_age_sec if d.last_seen_age_sec is not none else '' }}">{{ d.last_seen_ago or '—' }}</span></span>
+          {% if d.session_start %}<span><svg class="ic"><use href="#i-shield"/></svg>เริ่มเฝ้า <span class="js-session" data-ts="{{ d.session_start }}">{{ d.session_start_ago }}</span></span>{% endif %}
         </div>
       </div>
-      {% if d.status == 'armed' %}
-        <span class="badge b-armed">🟢 กำลังเฝ้าเกม</span>
-      {% elif d.status == 'lua_active' %}
-        <span class="badge b-ready">🟡 พร้อมใช้งาน — กด “เริ่มเฝ้าเกม”</span>
-      {% elif d.status == 'rejoining' %}
-        <span class="badge b-rejoin">🔵 กำลังกู้เกม…</span>
-      {% elif d.status == 'alert' %}
-        <span class="badge b-alert">🔴 มีปัญหา — ต้องตรวจสอบ</span>
-      {% elif d.status == 'game_running' %}
-        <span class="badge b-game">🟠 เกมเปิดอยู่ ยังไม่ได้เฝ้า</span>
-      {% elif d.status == 'offline' %}
-        <span class="badge b-offline">⚫ ออฟไลน์ (เครื่องไม่ตอบ)</span>
+      {{ status_badge(d.status) }}
+    </div>
+
+    <div class="meta">
+      <div class="mi">
+        <span class="icw"><svg class="ic"><use href="#i-gamepad"/></svg></span>
+        <div><div class="k">เกม</div>
+          <div class="v js-game {{ 'ok' if d.game_running else 'no' }}">{{ 'เปิดอยู่' if d.game_running else 'ปิด' }}</div>
+        </div>
+      </div>
+      <div class="mi">
+        <span class="icw"><svg class="ic"><use href="#i-user"/></svg></span>
+        <div><div class="k">ตัวละคร</div><div class="v js-character">{{ d.character or '—' }}</div></div>
+      </div>
+      <div class="mi">
+        <span class="icw"><svg class="ic"><use href="#i-map"/></svg></span>
+        <div><div class="k">แมพ</div><div class="v js-map">{{ d.map or '—' }}</div></div>
+      </div>
+      <div class="mi">
+        <span class="icw"><svg class="ic"><use href="#i-refresh"/></svg></span>
+        <div><div class="k">กู้เกมแล้ว</div><div class="v"><span class="js-rejoins">{{ d.rejoin_count }}</span> ครั้ง</div></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      {% if d.armed %}
+        <button class="btn danger js-armbtn" onclick="cmd('{{ d.device_id }}','disarm')">
+          <svg class="ic"><use href="#i-stop"/></svg> หยุดเฝ้า
+        </button>
       {% else %}
-        <span class="badge b-offline">⚪ เชื่อมต่อแล้ว</span>
+        <button class="btn success js-armbtn" onclick="cmd('{{ d.device_id }}','arm')">
+          <svg class="ic"><use href="#i-play"/></svg> เริ่มเฝ้าเกม
+        </button>
+      {% endif %}
+      <button class="btn soft" onclick="cmd('{{ d.device_id }}','rejoin_now')">
+        <svg class="ic"><use href="#i-zap"/></svg> กู้เกมทันที
+      </button>
+      <button class="btn soft" onclick="cmd('{{ d.device_id }}','screenshot')">
+        <svg class="ic"><use href="#i-camera"/></svg> แคปภาพ
+      </button>
+      <span class="spacer"></span>
+      <button class="btn ghost" onclick="askRemoveDevice('{{ d.device_id }}','{{ d.name }}')">
+        <svg class="ic"><use href="#i-trash"/></svg> ลบเครื่อง
+      </button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="shots" onclick="switchTab(this)">
+        <svg class="ic"><use href="#i-image"/></svg> ภาพหน้าจอ
+        {% if d.screenshots %}<span class="pill">{{ d.screenshots|length }}</span>{% endif %}
+      </button>
+      <button class="tab" data-tab="events" onclick="switchTab(this)">
+        <svg class="ic"><use href="#i-list"/></svg> ประวัติ
+        {% if d.events %}<span class="pill">{{ d.events|length }}</span>{% endif %}
+      </button>
+    </div>
+
+    <div class="pane" data-pane="shots">
+      {% if d.screenshots %}
+      <div class="shots">
+        {% for s in d.screenshots %}
+        <figure class="shot">
+          <a href="{{ s.url }}" target="_blank" rel="noopener">
+            <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ d.name }}" loading="lazy">
+          </a>
+          <figcaption class="cap">
+            <span>{{ s.ago }}</span>
+            <button class="del" title="ลบภาพ" aria-label="ลบภาพ" onclick="removeShot({{ s.id }})">
+              <svg class="ic"><use href="#i-x"/></svg>
+            </button>
+          </figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="none">
+        <svg class="ic"><use href="#i-camera"/></svg>
+        ยังไม่มีภาพ — กด “แคปภาพ” เพื่อขอภาพจากเครื่องนี้
+      </div>
       {% endif %}
     </div>
 
-    <div class="dev-body">
-      <div class="meta">
-        <div><div class="k">เกม</div><div class="v">{{ '✅ เปิดอยู่' if d.game_running else '❌ ปิด' }}</div></div>
-        <div><div class="k">ตัวละคร</div><div class="v">{{ d.character or '—' }}</div></div>
-        <div><div class="k">แมพ</div><div class="v">{{ d.map or '—' }}</div></div>
-        <div><div class="k">กู้เกมแล้ว</div><div class="v">{{ d.rejoin_count }} ครั้ง</div></div>
-      </div>
-
-      <div class="actions">
-        {% if d.armed %}
-          <button class="btn-stop" onclick="cmd('{{ d.device_id }}','disarm')">หยุดเฝ้า</button>
-        {% else %}
-          <button class="btn-start" onclick="cmd('{{ d.device_id }}','arm')">เริ่มเฝ้าเกม</button>
-        {% endif %}
-        <button class="btn-now" onclick="cmd('{{ d.device_id }}','rejoin_now')">กู้เกมทันที</button>
-        <button class="btn-shot" onclick="cmd('{{ d.device_id }}','screenshot')">📷 แคปภาพ</button>
-        <button class="btn-danger-ghost" onclick="removeDevice('{{ d.device_id }}','{{ d.name }}')">ลบเครื่อง</button>
-      </div>
-
-      <div class="cols">
-        <div>
-          <div class="sub"><span>ภาพหน้าจอล่าสุด</span><span style="font-weight:400;text-transform:none">เก็บ 7 วัน</span></div>
-          {% if d.screenshots %}
-          <div class="shots">
-            {% for s in d.screenshots %}
-            <div class="shot">
-              <a href="{{ s.url }}" target="_blank" rel="noopener">
-                <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ d.name }}" loading="lazy">
-              </a>
-              <div class="cap">
-                <span>{{ s.ago }}</span>
-                <button class="del" onclick="removeShot({{ s.id }})">ลบ</button>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="none">ยังไม่มีภาพ — กด “📷 แคปภาพ” เพื่อขอภาพจากเครื่องนี้</div>
-          {% endif %}
+    <div class="pane" data-pane="events" hidden>
+      {% if d.events %}
+      <div class="evlist">
+        {% for e in d.events %}
+        <div class="ev ev-{{ e.type }}">
+          <span class="evic">{{ ev_icon(e.type) }}</span>
+          <span class="evtxt">
+            {% if e.type == 'rejoin' %}กู้เกมสำเร็จ (ครั้งที่ {{ e.detail.get('count','') }})
+            {% elif e.type == 'alert' %}กู้ไม่ได้ — ต้องตรวจสอบ
+            {% elif e.type == 'arm' %}เริ่มเฝ้าเกม
+            {% elif e.type == 'disarm' %}หยุดเฝ้าเกม
+            {% elif e.type == 'rejoin_now' %}สั่งกู้เกมทันที
+            {% elif e.type == 'screenshot_now' %}สั่งแคปภาพ
+            {% else %}{{ e.type }}{% endif %}
+          </span>
+          <span class="evtime">{{ e.ago }}</span>
         </div>
-
-        <div>
-          <div class="sub"><span>ประวัติเครื่องนี้</span></div>
-          {% if d.events %}
-          <div class="evlist">
-            {% for e in d.events %}
-            <div class="ev">
-              <span class="t">{{ e.ago }}</span>
-              <span>
-                {% if e.type == 'rejoin' %}🔄 กู้เกม (ครั้งที่ {{ e.detail.get('count','') }})
-                {% elif e.type == 'alert' %}🔴 กู้ไม่ได้ — ต้องตรวจสอบ
-                {% elif e.type == 'arm' %}▶️ เริ่มเฝ้า
-                {% elif e.type == 'disarm' %}⏹️ หยุดเฝ้า
-                {% elif e.type == 'rejoin_now' %}⚡ กู้เกมทันที (manual)
-                {% elif e.type == 'screenshot_now' %}📷 สั่งแคปภาพ
-                {% else %}{{ e.type }}{% endif %}
-              </span>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="none">ยังไม่มีเหตุการณ์</div>
-          {% endif %}
-        </div>
+        {% endfor %}
       </div>
+      {% else %}
+      <div class="none">
+        <svg class="ic"><use href="#i-list"/></svg>
+        ยังไม่มีเหตุการณ์
+      </div>
+      {% endif %}
     </div>
   </section>
   {% endfor %}
 
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ---------- modal: เพิ่มเครื่อง ---------- -->
+<div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+  <form class="modal-card" onsubmit="return submitAdd(event)">
+    <h3 id="addTitle">เพิ่มเครื่องใหม่</h3>
+    <p>ตั้งชื่อเพื่อแยกแยะเครื่อง (เช่น “เครื่อง 1” หรือ “ไอดีหลัก”)</p>
+    <label for="devName">ชื่อเครื่อง</label>
+    <input type="text" id="devName" value="เครื่องใหม่" maxlength="60" autocomplete="off">
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" onclick="closeModal('addModal')">ยกเลิก</button>
+      <button type="submit" class="btn primary"><svg class="ic"><use href="#i-plus"/></svg> เพิ่มเครื่อง</button>
+    </div>
+  </form>
+</div>
+
+<!-- ---------- modal: แสดงรหัสเครื่อง ---------- -->
+<div class="modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
+  <div class="modal-card">
+    <div class="modal-ic ok"><svg class="ic"><use href="#i-check"/></svg></div>
+    <h3 id="codeTitle">เพิ่มเครื่องแล้ว</h3>
+    <p>นำรหัสนี้ไปกรอกในแอป Rejoin บนคลาวโฟน — <b>ระบบจะแสดงรหัสครั้งเดียว</b> กรุณาจดเก็บไว้</p>
+    <div class="code" id="codeText">RJ-XXXXX-XXXXX</div>
+    <div class="modal-actions">
+      <button class="btn soft" onclick="copyCode()"><svg class="ic"><use href="#i-copy"/></svg> คัดลอกรหัส</button>
+      <button class="btn primary" onclick="closeModal('codeModal');location.reload()">เสร็จสิ้น</button>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- modal: ยืนยัน ---------- -->
+<div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal-card">
+    <div class="modal-ic warn"><svg class="ic"><use href="#i-alert"/></svg></div>
+    <h3 id="confirmTitle">ยืนยัน</h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('confirmModal')">ยกเลิก</button>
+      <button class="btn danger" id="confirmOk">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg class="ic"><use href="#i-check"/></svg><span id="toastText"></span></div>
 
 <script>
-function toast(msg) {
+/* ---------------- toast ---------------- */
+let toastTimer;
+function toast(msg){
   const t = document.getElementById('toast');
-  t.textContent = msg; t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 2500);
+  document.getElementById('toastText').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
-async function cmd(id, action) {
+
+/* ---------------- modal ---------------- */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+});
+
+/* ---------------- tabs ---------------- */
+function switchTab(btn){
+  const card = btn.closest('.device');
+  card.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === btn));
+  card.querySelectorAll('.pane').forEach(p => { p.hidden = p.dataset.pane !== btn.dataset.tab; });
+}
+
+/* ---------------- เพิ่มเครื่อง ---------------- */
+function openAdd(){
+  const i = document.getElementById('devName');
+  i.value = 'เครื่องใหม่';
+  openModal('addModal');
+  setTimeout(() => { i.focus(); i.select(); }, 60);
+}
+async function submitAdd(e){
+  e.preventDefault();
+  const name = (document.getElementById('devName').value || '').trim() || 'เครื่องใหม่';
+  const r = await fetch('/api/me/devices', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})
+  });
+  if (!r.ok){ toast('เพิ่มเครื่องไม่สำเร็จ'); return false; }
+  const d = await r.json();
+  closeModal('addModal');
+  document.getElementById('codeText').textContent = d.device_code;
+  openModal('codeModal');
+  return false;
+}
+function copyCode(){
+  navigator.clipboard.writeText(document.getElementById('codeText').textContent)
+    .then(() => toast('คัดลอกรหัสแล้ว'))
+    .catch(() => toast('คัดลอกไม่สำเร็จ — จดด้วยมือ'));
+}
+
+/* ---------------- คำสั่ง ---------------- */
+async function cmd(id, action, btn){
   const labels = {arm:'เริ่มเฝ้าเกม', disarm:'หยุดเฝ้า', rejoin_now:'กู้เกมทันที', screenshot:'แคปภาพ'};
-  if (action === 'disarm' && !confirm('หยุดเฝ้าเกม? ระบบจะไม่กู้เกมให้จนกว่าจะเริ่มใหม่')) return;
+  if (btn) btn.classList.add('loading');
   const r = await fetch(`/api/device/${id}/${action}`, {method:'POST'});
-  if (!r.ok) { toast('ทำรายการไม่สำเร็จ'); return; }
-  if (action === 'screenshot') {
-    toast('สั่งแคปภาพแล้ว — รอสักครู่ (ภาพจะโผล่ในหน้านี้)');
+  if (!r.ok){ if (btn) btn.classList.remove('loading'); toast('ทำรายการไม่สำเร็จ'); return; }
+  if (action === 'screenshot'){
+    toast('สั่งแคปภาพแล้ว — รอสักครู่ ภาพจะโผล่ในหน้านี้');
     setTimeout(() => location.reload(), 6000);
     return;
   }
-  toast('สั่ง ' + labels[action] + ' แล้ว — รอสักครู่');
-  setTimeout(() => location.reload(), 1500);
+  toast('สั่ง “' + labels[action] + '” แล้ว — กำลังอัปเดต');
+  setTimeout(() => location.reload(), 1400);
 }
-async function addDevice() {
-  const name = prompt('ตั้งชื่อเครื่อง (เช่น เครื่อง 1 / ไอดีหลัก):', 'เครื่องใหม่');
-  if (name === null) return;
-  const r = await fetch('/api/me/devices', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({name})
-  });
-  if (!r.ok) { toast('เพิ่มเครื่องไม่สำเร็จ'); return; }
-  const d = await r.json();
-  document.getElementById('codeText').textContent = d.device_code;
-  const box = document.getElementById('codeBox');
-  box.style.display = 'block';
-  box.scrollIntoView({behavior:'smooth'});
+
+/* ---------------- ลบภาพ / ลบเครื่อง ---------------- */
+function askRemoveDevice(id, name){
+  document.getElementById('confirmText').textContent =
+    'ลบเครื่อง “' + name + '”? รหัสเครื่องนี้จะใช้ไม่ได้อีก';
+  const ok = document.getElementById('confirmOk');
+  ok.onclick = async () => {
+    const r = await fetch(`/api/me/devices/${id}`, {method:'DELETE'});
+    if (r.ok){ toast('ลบแล้ว'); setTimeout(() => location.reload(), 700); }
+    else toast('ลบไม่สำเร็จ');
+  };
+  openModal('confirmModal');
 }
-function copyCode() {
-  navigator.clipboard.writeText(document.getElementById('codeText').textContent)
-    .then(() => toast('คัดลอกรหัสแล้ว'));
-}
-async function removeShot(id) {
-  if (!confirm('ลบภาพนี้?')) return;
+async function removeShot(id){
   const r = await fetch(`/api/me/screenshots/${id}`, {method:'DELETE'});
-  if (r.ok) { toast('ลบแล้ว'); setTimeout(() => location.reload(), 600); }
+  if (r.ok){ toast('ลบภาพแล้ว'); setTimeout(() => location.reload(), 500); }
   else toast('ลบไม่สำเร็จ');
 }
-async function removeDevice(id, name) {
-  if (!confirm('ลบเครื่อง “' + name + '”? รหัสเครื่องจะใช้ไม่ได้อีก')) return;
-  const r = await fetch(`/api/me/devices/${id}`, {method:'DELETE'});
-  if (r.ok) { toast('ลบแล้ว'); setTimeout(() => location.reload(), 800); }
-  else toast('ลบไม่สำเร็จ');
-}
-async function logout() {
+
+async function logout(){
   await fetch('/auth/logout', {method:'POST'});
   location.href = '/';
 }
+
+/* ---------------- อัปเดตสถานะสด (ไม่ต้องรีเฟรช) ---------------- */
+const STATUS = {
+  armed:       {cls:'b-armed',   icon:'i-shield', label:'กำลังเฝ้าเกม'},
+  lua_active:  {cls:'b-ready',   icon:'i-check',  label:'พร้อมใช้งาน'},
+  rejoining:   {cls:'b-rejoin',  icon:'i-refresh',label:'กำลังกู้เกม'},
+  alert:       {cls:'b-alert',   icon:'i-alert',  label:'มีปัญหา'},
+  game_running:{cls:'b-game',    icon:'i-gamepad',label:'เกมเปิดอยู่'},
+  offline:     {cls:'b-offline', icon:'i-wifi',   label:'ออฟไลน์'},
+  connected:   {cls:'b-conn',    icon:'i-wifi',   label:'เชื่อมต่อแล้ว'},
+};
+function badgeHTML(s){
+  const m = STATUS[s] || STATUS.connected;
+  return `<svg class="ic"><use href="#${m.icon}"/></svg>${m.label}`;
+}
+function relTime(sec){
+  if (sec == null) return '—';
+  sec = Math.max(0, sec);
+  if (sec < 60) return sec + ' วินาทีที่แล้ว';
+  if (sec < 3600) return Math.floor(sec/60) + ' นาทีที่แล้ว';
+  if (sec < 86400) return Math.floor(sec/3600) + ' ชั่วโมงที่แล้ว';
+  return Math.floor(sec/86400) + ' วันที่แล้ว';
+}
+function text(el, v){ if (el) el.textContent = v; }
+
+async function poll(){
+  if (document.hidden || document.querySelector('.modal.open')) return;
+  let data;
+  try {
+    const r = await fetch('/api/me/devices', {headers:{'Accept':'application/json'}});
+    if (!r.ok) return;
+    data = await r.json();
+  } catch { return; }
+  const list = data.devices || [];
+  let armed = 0, problem = 0, rejoins = 0;
+  for (const d of list){
+    if (d.status === 'armed') armed++;
+    if (d.status === 'alert' || d.status === 'offline') problem++;
+    rejoins += d.rejoin_count || 0;
+
+    const card = document.querySelector(`.device[data-device="${d.device_id}"]`);
+    if (!card) continue;
+
+    const badge = card.querySelector('.js-status');
+    const m = STATUS[d.status] || STATUS.connected;
+    if (badge){ badge.className = 'badge js-status ' + m.cls; badge.innerHTML = badgeHTML(d.status); }
+    const dot = card.querySelector('.js-dot');
+    if (dot) dot.className = 'dot js-dot ' + d.status;
+
+    const game = card.querySelector('.js-game');
+    if (game){ game.textContent = d.game_running ? 'เปิดอยู่' : 'ปิด'; game.className = 'v js-game ' + (d.game_running ? 'ok' : 'no'); }
+    text(card.querySelector('.js-character'), d.character || '—');
+    text(card.querySelector('.js-map'), d.map || '—');
+    text(card.querySelector('.js-rejoins'), d.rejoin_count || 0);
+
+    const ls = card.querySelector('.js-lastseen');
+    if (ls) ls.textContent = d.last_seen_age_sec == null ? '—' : relTime(d.last_seen_age_sec);
+    const ss = card.querySelector('.js-session');
+    if (ss && d.session_start) ss.textContent = relTime(Math.floor(Date.now()/1000) - d.session_start);
+
+    // sync ปุ่ม arm/disarm กับสถานะจริง
+    card.dataset.armed = d.armed ? 'true' : 'false';
+    const btn = card.querySelector('.js-armbtn');
+    if (btn){
+      const want = d.armed ? 'disarm' : 'arm';
+      if (btn.dataset.act !== want){
+        btn.dataset.act = want;
+        if (d.armed){
+          btn.className = 'btn danger js-armbtn';
+          btn.innerHTML = '<svg class="ic"><use href="#i-stop"/></svg> หยุดเฝ้า';
+          btn.setAttribute('onclick', `cmd('${d.device_id}','disarm')`);
+        } else {
+          btn.className = 'btn success js-armbtn';
+          btn.innerHTML = '<svg class="ic"><use href="#i-play"/></svg> เริ่มเฝ้าเกม';
+          btn.setAttribute('onclick', `cmd('${d.device_id}','arm')`);
+        }
+      }
+    }
+  }
+  text(document.getElementById('statDevices'), list.length);
+  text(document.getElementById('statArmed'), armed);
+  text(document.getElementById('statProblem'), problem);
+  text(document.getElementById('statRejoins'), rejoins);
+}
+setInterval(poll, 10000);
 </script>
 </body>
 </html>

@@ -3,40 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ระบบกู้เกมอัตโนมัติ</title>
+<meta name="color-scheme" content="dark">
+<title>Rejoin — เข้าสู่ระบบ</title>
 <style>
-  body { font-family: system-ui, "Segoe UI", sans-serif; background:#0b1220; color:#e2e8f0;
-         display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; padding:20px; }
-  .card { background:#111a2e; padding:44px 40px; border-radius:20px; text-align:center;
-          box-shadow:0 20px 60px rgba(0,0,0,.5); max-width:420px; width:100%;
-          border:1px solid #1e293b; }
-  h1 { color:#38bdf8; margin:0 0 8px; font-size:26px; }
-  .sub { color:#94a3b8; font-size:15px; line-height:1.7; margin-bottom:8px; }
-  ul { text-align:left; color:#cbd5e1; font-size:14px; line-height:2; margin:20px 0;
-       padding-left:20px; }
-  a.btn { display:block; margin-top:14px; padding:14px 24px; border-radius:12px;
-          background:#5865F2; color:#fff; text-decoration:none; font-weight:700; font-size:16px; }
-  a.dev { background:#334155; color:#cbd5e1; font-size:14px; padding:11px; }
-  .warn { color:#fbbf24; font-size:13px; margin-top:12px; }
+  *{box-sizing:border-box}
+  :root{
+    --bg:#080d17; --card:#111a2b; --card-2:#0e1626; --line:#22304a; --line-2:#1a2438;
+    --txt:#eaf0f8; --muted:#93a2bb; --dim:#64748b; --accent:#4f8cff; --accent-2:#22d3a6;
+  }
+  body{
+    margin:0;min-height:100vh;color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    background:
+      radial-gradient(900px 480px at 78% -10%, #17233f 0%, transparent 58%),
+      radial-gradient(680px 420px at 6% 8%, #10203a 0%, transparent 52%),
+      var(--bg);
+  }
+  .ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;
+      stroke-linecap:round;stroke-linejoin:round;vertical-align:-.13em;flex:none}
+  .ic.fill{fill:currentColor;stroke:none}
+
+  .card{
+    width:100%;max-width:440px;background:linear-gradient(180deg,var(--card),var(--card-2));
+    border:1px solid var(--line);border-radius:24px;padding:38px 34px;
+    box-shadow:0 50px 110px -50px #000;animation:pop .35s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .logo{
+    width:56px;height:56px;border-radius:18px;display:grid;place-items:center;
+    background:linear-gradient(145deg,#4f8cff,#22d3a6);color:#04121f;font-size:27px;
+    box-shadow:0 16px 34px -16px #4f8cff;margin-bottom:20px;
+  }
+  h1{margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-.4px}
+  .sub{color:var(--muted);font-size:14px;line-height:1.65;margin:0 0 22px}
+
+  ul{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:12px}
+  li{display:flex;align-items:center;gap:12px;font-size:14px;color:#cdd8ea}
+  li .icw{width:32px;height:32px;border-radius:10px;flex:none;display:grid;place-items:center;
+          font-size:16px;background:rgba(79,140,255,.1);color:var(--accent)}
+  li .icw.g{background:rgba(34,211,166,.1);color:var(--accent-2)}
+
+  a.btn{display:flex;align-items:center;justify-content:center;gap:10px;
+        padding:14px 22px;border-radius:13px;font-weight:700;font-size:15px;
+        text-decoration:none;transition:filter .15s,transform .12s}
+  a.btn:hover{filter:brightness(1.08)}
+  a.btn:active{transform:translateY(1px)}
+  a.discord{background:#5865F2;color:#fff;box-shadow:0 14px 30px -14px #5865F2}
+  a.discord .ic{width:20px;height:20px}
+  a.dev{margin-top:10px;background:var(--card-2);color:var(--muted);border:1px solid var(--line);
+        font-size:13.5px;padding:11px}
+  a.dev:hover{color:var(--txt)}
+
+  .warn{display:flex;gap:9px;align-items:flex-start;color:#fbbf24;font-size:12.5px;
+        line-height:1.55;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
+        border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .warn .ic{width:16px;height:16px;margin-top:1px}
+  .foot{margin-top:20px;font-size:11.5px;color:var(--dim);text-align:center}
 </style>
 </head>
 <body>
   <div class="card">
-    <h1>ระบบกู้เกมอัตโนมัติ</h1>
-    <div class="sub">ปล่อยบอทไว้ได้ ไม่ต้องเฝ้า — เกมหลุดแล้วกู้ให้เอง</div>
+    <div class="logo"><svg class="ic" style="width:28px;height:28px;stroke-width:2.3"><use href="#i-refresh"/></svg></div>
+    <h1>Rejoin</h1>
+    <p class="sub">ปล่อยบอทไว้ได้ ไม่ต้องเฝ้า — เกมหลุดแล้วระบบกู้ให้เองอัตโนมัติ</p>
+
     <ul>
-      <li>เกมหลุด/ค้าง → เข้าใหม่ให้เองอัตโนมัติ</li>
-      <li>ดูสถานะเครื่องได้ตลอดจากมือถือ</li>
-      <li>ใช้ได้หลายเครื่องในบัญชีเดียว</li>
+      <li>
+        <span class="icw"><svg class="ic"><use href="#i-refresh"/></svg></span>
+        เกมหลุด/ค้าง → เข้าใหม่ให้เองทันที
+      </li>
+      <li>
+        <span class="icw"><svg class="ic"><use href="#i-monitor"/></svg></span>
+        ดูสถานะทุกเครื่องได้ตลอดจากมือถือ
+      </li>
+      <li>
+        <span class="icw g"><svg class="ic"><use href="#i-smartphone"/></svg></span>
+        ใช้หลายเครื่อง/หลายไอดีในบัญชีเดียว
+      </li>
     </ul>
+
     {% if discord_enabled %}
-      <a class="btn" href="/auth/discord">เข้าสู่ระบบด้วย Discord</a>
+      <a class="btn discord" href="/auth/discord">
+        <svg class="ic fill" viewBox="0 0 24 24"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        เข้าสู่ระบบด้วย Discord
+      </a>
     {% else %}
-      <div class="warn">⚠️ ยังไม่ได้ตั้งค่า Discord — ใช้ปุ่ม dev ด้านล่างเพื่อทดสอบ</div>
+      <div class="warn">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <span>ยังไม่ได้ตั้งค่า Discord (DISCORD_CLIENT_ID/SECRET) — ใช้ปุ่ม dev ด้านล่างเพื่อทดสอบ</span>
+      </div>
     {% endif %}
+
     {% if dev_auth %}
-      <a class="btn dev" href="/auth/dev">เข้าสู่ระบบแบบ dev (ทดสอบ)</a>
+      <a class="btn dev" href="/auth/dev">
+        <svg class="ic"><use href="#i-key"/></svg> เข้าสู่ระบบแบบ dev (ทดสอบ)
+      </a>
     {% endif %}
+
+    <div class="foot">เข้าสู่ระบบปลอดภัยด้วย Discord OAuth2</div>
   </div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+    <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  </defs></svg>
 </body>
 </html>
