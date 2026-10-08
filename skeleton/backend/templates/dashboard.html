@@ -52,6 +52,8 @@
 
   /* ---------- history pane ---------- */
   .pane{padding-top:14px}
+  .pane[hidden]{display:none}
+  .btn.on{background:var(--hover-2);color:var(--text);border-color:var(--border-2)}
 
   /* ---------- events ---------- */
   .evlist{display:flex;flex-direction:column;max-height:340px;overflow-y:auto;
@@ -225,13 +227,17 @@
         <button class="btn default" onclick="cmd('{{ d.device_id }}','rejoin_now')">
           <svg class="ic"><use href="#i-zap"/></svg> กู้เกมทันที
         </button>
+        <button class="btn ghost js-histbtn" onclick="toggleHistory('{{ d.device_id }}', this)"
+                aria-expanded="false" aria-controls="hist-{{ d.device_id }}">
+          <svg class="ic"><use href="#i-list"/></svg> ประวัติ
+        </button>
         <span class="spacer"></span>
         <button class="btn ghost" onclick="askRemoveDevice('{{ d.device_id }}','{{ d.name }}')">
           <svg class="ic"><use href="#i-trash"/></svg> ลบเครื่อง
         </button>
       </div>
 
-      <div class="pane">
+      <div class="pane" id="hist-{{ d.device_id }}" hidden>
         {% if d.events %}
         <div class="evlist">
           {% for e in d.events %}
@@ -339,6 +345,19 @@ async function cmd(id, action, btn){
   if (!r.ok){ if (btn) btn.classList.remove('loading'); toast('ทำรายการไม่สำเร็จ'); return; }
   toast('สั่ง “' + labels[action] + '” แล้ว — กำลังอัปเดต');
   setTimeout(() => location.reload(), 1400);
+}
+
+/* ---------------- เปิด/ปิดประวัติ ---------------- */
+function toggleHistory(id, btn){
+  const pane = document.getElementById('hist-' + id);
+  if (!pane) return;
+  const open = pane.hasAttribute('hidden');
+  if (open) pane.removeAttribute('hidden');
+  else pane.setAttribute('hidden', '');
+  if (btn){
+    btn.classList.toggle('on', open);
+    btn.setAttribute('aria-expanded', String(open));
+  }
 }
 
 /* ---------------- ลบเครื่อง ---------------- */
