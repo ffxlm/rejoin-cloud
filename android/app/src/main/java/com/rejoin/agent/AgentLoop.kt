@@ -30,7 +30,7 @@ class AgentLoop(
             rejoinTimeoutSec = prefs.timeoutSec,
         )
     )
-    private val sessionStart = nowSec()
+    private val sessionStart = System.currentTimeMillis() / 1000
 
     suspend fun run() {
         // ---- 1) ลงทะเบียน ----
@@ -136,5 +136,5 @@ class AgentLoop(
     private fun androidId(): String? =
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 
-    private fun nowSec(): Long = System.currentTimeMillis() / 1000
+    private fun nowSec(): Int = (System.currentTimeMillis() / 1000).toInt()
 }
