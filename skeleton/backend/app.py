@@ -138,7 +138,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 select(Event)
                 .where(Event.device_id.in_([d.id for d in devices]) if devices else False)
                 .order_by(Event.ts.desc())
-                .limit(20)
+                .limit(400)
             )
         ).scalars().all() if devices else []
 
@@ -147,7 +147,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 select(Screenshot)
                 .where(Screenshot.device_id.in_([d.id for d in devices]) if devices else False)
                 .order_by(Screenshot.ts.desc())
-                .limit(12)
+                .limit(120)
             )
         ).scalars().all() if devices else []
 
@@ -169,28 +169,38 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 return f"{sec // 3600} ชั่วโมงที่แล้ว"
             return f"{sec // 86400} วันที่แล้ว"
 
-        event_views = [
-            {
-                "type": e.type,
-                "device_id": str(e.device_id),
-                "device_name": name_by_id.get(e.device_id, f"เครื่อง {e.device_id}"),
-                "ts": int(e.ts.timestamp()),
-                "ago": _ago(int(e.ts.timestamp())),
-                "detail": e.detail or {},
-            }
-            for e in events
-        ]
+        def _event_view(e: Event) -> dict:
+            ts = int(e.ts.timestamp())
+            return {"type": e.type, "ts": ts, "ago": _ago(ts), "detail": e.detail or {}}
 
-        shot_views = [
+        def _shot_view(s: Screenshot) -> dict:
+            ts = int(s.ts.timestamp())
+            return {"id": s.id, "url": s.url, "ts": ts, "ago": _ago(ts)}
+
+        # จัดกลุ่มภาพ + เหตุการณ์ "แยกตามเครื่อง" (แต่ละการ์ดมีของตัวเอง)
+        MAX_EVENTS, MAX_SHOTS = 8, 6
+        events_by_dev: dict[int, list] = {}
+        for e in events:
+            bucket = events_by_dev.setdefault(e.device_id, [])
+            if len(bucket) < MAX_EVENTS:
+                bucket.append(_event_view(e))
+        shots_by_dev: dict[int, list] = {}
+        for s in shots:
+            bucket = shots_by_dev.setdefault(s.device_id, [])
+            if len(bucket) < MAX_SHOTS:
+                bucket.append(_shot_view(s))
+
+        panels = [
             {
-                "id": s.id,
-                "url": s.url,
-                "device_id": str(s.device_id),
-                "device_name": name_by_id.get(s.device_id, f"เครื่อง {s.device_id}"),
-                "ts": int(s.ts.timestamp()),
-                "ago": _ago(int(s.ts.timestamp())),
+                **v,
+                "session_start_ago": _ago(v["session_start"]) if v["session_start"] else None,
+                "last_seen_ago": (
+                    _ago(now - v["last_seen_age_sec"]) if v["last_seen_age_sec"] is not None else None
+                ),
+                "events": events_by_dev.get(d.id, []),
+                "screenshots": shots_by_dev.get(d.id, []),
             }
-            for s in shots
+            for d, v in zip(devices, views)
         ]
 
         return templates.TemplateResponse(
@@ -199,8 +209,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             {
                 "user": user_public(user),
                 "devices": views,
-                "events": event_views,
-                "screenshots": shot_views,
+                "panels": panels,
                 "armed_count": armed_count,
                 "problem_count": problem_count,
                 "total_rejoins": total_rejoins,

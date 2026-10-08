@@ -6,75 +6,108 @@
 <title>ระบบกู้เกมอัตโนมัติ</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: system-ui, "Segoe UI", sans-serif; background:#0b1220; color:#e2e8f0;
-         margin:0; padding:0; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 20px; }
+  :root {
+    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1729; --line:#1e293b;
+    --txt:#e2e8f0; --muted:#94a3b8; --dim:#64748b; --accent:#38bdf8;
+    --green:#4ade80; --red:#f87171; --amber:#facc15; --blue:#38bdf8;
+  }
+  body { font-family: system-ui, "Segoe UI", "Noto Sans Thai", sans-serif;
+         background:radial-gradient(1200px 600px at 70% -10%, #14203a 0%, var(--bg) 55%);
+         color:var(--txt); margin:0; padding:0; min-height:100vh; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 20px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px;
-           padding:16px 20px; background:#111a2e; border-bottom:1px solid #1e293b;
-           position:sticky; top:0; z-index:10; }
-  .brand { font-size:19px; font-weight:800; color:#38bdf8; }
-  .brand small { display:block; font-size:12px; font-weight:400; color:#64748b; }
-  .who { font-size:13px; color:#94a3b8; margin-right:8px; }
-  .summary { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0; }
-  .stat { flex:1; min-width:150px; background:#111a2e; border:1px solid #1e293b;
-          border-radius:14px; padding:16px 18px; }
+           padding:16px 20px; background:rgba(17,26,46,.9); backdrop-filter:blur(8px);
+           border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
+  .brand { font-size:19px; font-weight:800; color:var(--accent); }
+  .brand small { display:block; font-size:12px; font-weight:400; color:var(--dim); }
+  .who { font-size:13px; color:var(--muted); margin-right:8px; }
+
+  .summary { display:flex; gap:12px; flex-wrap:wrap; margin:22px 0; }
+  .stat { flex:1; min-width:150px; background:linear-gradient(180deg,#14203a,#0f1830);
+          border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
   .stat .n { font-size:28px; font-weight:800; }
-  .stat .l { font-size:13px; color:#94a3b8; margin-top:2px; }
-  .card { background:#111a2e; border:1px solid #1e293b; border-radius:16px;
-          padding:18px 20px; margin-bottom:16px; }
-  .card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-  .dev-name { font-size:18px; font-weight:700; }
-  .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
-           border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap; }
-  .b-armed   { background:#052e16; color:#4ade80; }
-  .b-ready   { background:#3a2e05; color:#facc15; }
-  .b-rejoin  { background:#082f49; color:#38bdf8; }
-  .b-alert   { background:#3b0a0a; color:#f87171; }
-  .b-offline { background:#1e293b; color:#94a3b8; }
-  .b-game    { background:#3a2a05; color:#fbbf24; }
-  .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-          gap:10px; margin:16px 0; }
-  .meta .k { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.03em; }
-  .meta .v { font-size:15px; font-weight:600; margin-top:2px; }
-  .actions { display:flex; gap:10px; flex-wrap:wrap; }
-  button { cursor:pointer; border:0; border-radius:10px; padding:12px 18px;
-           font-weight:700; font-size:15px; font-family:inherit; }
-  .btn-start { background:#22c55e; color:#052e16; }
-  .btn-stop  { background:#ef4444; color:#fff; }
-  .btn-now   { background:#334155; color:#e2e8f0; }
-  .btn-shot  { background:#0ea5e9; color:#082f49; }
-  .btn-ghost { background:transparent; color:#94a3b8; border:1px solid #334155; }
-  .btn-primary { background:#38bdf8; color:#082f49; }
-  .btn-danger-ghost { background:transparent; color:#f87171; border:1px solid #7f1d1d;
-                      padding:8px 12px; font-size:13px; }
-  .empty { text-align:center; padding:60px 20px; color:#64748b; }
-  .empty h2 { color:#cbd5e1; }
-  .shots { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
-  .shot { background:#0b1220; border:1px solid #1e293b; border-radius:12px;
-          overflow:hidden; }
-  .shot a { display:block; line-height:0; }
-  .shot img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block;
-              background:#0b1220; }
-  .shot .cap { padding:8px 10px; font-size:12px; color:#94a3b8; display:flex;
-               justify-content:space-between; gap:6px; align-items:center; }
-  .shot .cap .del { color:#f87171; cursor:pointer; border:0; background:transparent;
-                    font-size:12px; padding:2px 4px; }
-  .help { background:#0e1a2b; border:1px dashed #334155; border-radius:14px;
-          padding:16px 20px; margin:16px 0; font-size:14px; color:#94a3b8; line-height:1.7; }
-  .help b { color:#e2e8f0; }
+  .stat .l { font-size:13px; color:var(--muted); margin-top:2px; }
+
+  .help { background:var(--panel2); border:1px dashed #334155; border-radius:14px;
+          padding:16px 20px; margin:16px 0; font-size:14px; color:var(--muted); line-height:1.7; }
+  .help b { color:var(--txt); }
+
   .code-box { background:#052e16; border:1px solid #166534; border-radius:14px;
               padding:20px; margin:16px 0; display:none; }
   .code-box .big { font-family:monospace; font-size:26px; font-weight:800; color:#86efac;
                    letter-spacing:2px; margin:8px 0 12px; }
-  h2.sec { font-size:16px; color:#cbd5e1; margin:28px 0 12px; }
-  table { border-collapse:collapse; width:100%; }
-  td,th { border-bottom:1px solid #1e293b; padding:10px 8px; text-align:left; font-size:13px; }
-  th { color:#64748b; font-weight:600; }
+
+  h2.sec { font-size:16px; color:#cbd5e1; margin:28px 0 14px; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  input[type=text] { background:#0b1220; border:1px solid #334155; color:#e2e8f0;
+  .toprow { display:flex; justify-content:space-between; align-items:center;
+            gap:12px; flex-wrap:wrap; margin:24px 0 14px; }
+  .toprow h2 { margin:0; font-size:16px; color:#cbd5e1; }
+
+  /* ---- การ์ดต่อเครื่อง ---- */
+  .dev { background:linear-gradient(180deg,#131e34,#0f1830); border:1px solid var(--line);
+         border-radius:20px; padding:0; margin-bottom:22px; overflow:hidden;
+         box-shadow:0 10px 30px -18px #000; }
+  .dev-head { display:flex; justify-content:space-between; align-items:flex-start;
+              gap:12px; padding:18px 20px 14px; flex-wrap:wrap;
+              border-bottom:1px solid var(--line); background:rgba(20,32,58,.5); }
+  .dev-name { font-size:19px; font-weight:800; display:flex; align-items:center; gap:10px; }
+  .dev-id { font-size:12px; color:var(--dim); font-weight:500; }
+  .dev-sub { font-size:13px; color:var(--dim); margin-top:4px; }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
+           border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap; }
+  .b-armed   { background:#052e16; color:var(--green); }
+  .b-ready   { background:#3a2e05; color:var(--amber); }
+  .b-rejoin  { background:#082f49; color:var(--blue); }
+  .b-alert   { background:#3b0a0a; color:var(--red); }
+  .b-offline { background:#1e293b; color:var(--muted); }
+  .b-game    { background:#3a2a05; color:#fbbf24; }
+
+  .dev-body { padding:16px 20px 20px; }
+  .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+          gap:10px; margin:0 0 16px; }
+  .meta .k { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.03em; }
+  .meta .v { font-size:15px; font-weight:600; margin-top:2px; }
+
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  button { cursor:pointer; border:0; border-radius:10px; padding:12px 18px;
+           font-weight:700; font-size:15px; font-family:inherit; transition:filter .15s; }
+  button:hover { filter:brightness(1.1); }
+  .btn-start { background:#22c55e; color:#052e16; }
+  .btn-stop  { background:#ef4444; color:#fff; }
+  .btn-now   { background:#334155; color:var(--txt); }
+  .btn-shot  { background:#0ea5e9; color:#082f49; }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid #334155; }
+  .btn-primary { background:var(--accent); color:#082f49; }
+  .btn-danger-ghost { background:transparent; color:var(--red); border:1px solid #7f1d1d;
+                      padding:8px 12px; font-size:13px; }
+
+  .cols { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-top:18px; }
+  @media (max-width:760px) { .cols { grid-template-columns:1fr; } }
+  .sub { font-size:12px; font-weight:700; color:var(--dim); text-transform:uppercase;
+         letter-spacing:.05em; margin-bottom:10px; display:flex; justify-content:space-between; }
+
+  .shots { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+  .shot { background:#0b1220; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .shot a { display:block; line-height:0; }
+  .shot img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#0b1220; }
+  .shot .cap { padding:6px 8px; font-size:11px; color:var(--muted); display:flex;
+               justify-content:space-between; gap:6px; align-items:center; }
+  .shot .cap .del { color:var(--red); cursor:pointer; border:0; background:transparent;
+                    font-size:11px; padding:2px 4px; }
+
+  .evlist { display:flex; flex-direction:column; gap:8px; }
+  .ev { display:flex; gap:10px; align-items:flex-start; font-size:13px;
+        background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
+  .ev .t { color:var(--dim); font-size:11px; white-space:nowrap; min-width:74px; }
+  .none { font-size:13px; color:var(--dim); background:var(--panel2); border:1px dashed var(--line);
+          border-radius:10px; padding:14px; text-align:center; }
+
+  .empty { text-align:center; padding:60px 20px; color:var(--dim); }
+  .empty h2 { color:#cbd5e1; }
+  input[type=text] { background:var(--bg); border:1px solid #334155; color:var(--txt);
                      border-radius:10px; padding:11px 14px; font-size:15px; font-family:inherit; }
   .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-           background:#1e293b; color:#e2e8f0; padding:12px 20px; border-radius:10px;
+           background:#1e293b; color:var(--txt); padding:12px 20px; border-radius:10px;
            display:none; z-index:50; }
 </style>
 </head>
@@ -110,25 +143,29 @@
     </div>
   </div>
 
-  <div class="row" style="justify-content:space-between;margin:20px 0 8px">
-    <h2 class="sec" style="margin:0">เครื่องของฉัน</h2>
+  <div class="toprow">
+    <h2>เครื่องของฉัน</h2>
     <button class="btn-primary" onclick="addDevice()">+ เพิ่มเครื่อง</button>
   </div>
 
-  {% if not devices %}
+  {% if not panels %}
   <div class="empty">
     <h2>ยังไม่มีเครื่อง</h2>
     <p>กด “+ เพิ่มเครื่อง” เพื่อสร้างรหัส แล้วนำไปกรอกในแอปบนคลาวโฟน</p>
   </div>
   {% endif %}
 
-  {% for d in devices %}
-  <div class="card">
-    <div class="card-head">
+  {% for d in panels %}
+  <section class="dev">
+    <div class="dev-head">
       <div>
-        <div class="dev-name">{{ d.name }}</div>
-        <div style="font-size:13px;color:#64748b;margin-top:2px">
-          อัปเดตล่าสุด {{ d.last_seen_age_sec if d.last_seen_age_sec is not none else '—' }} วินาทีที่แล้ว
+        <div class="dev-name">
+          {{ d.name }}
+          <span class="dev-id">#{{ d.device_id }}</span>
+        </div>
+        <div class="dev-sub">
+          อัปเดตล่าสุด {{ d.last_seen_ago or '—' }}
+          {% if d.session_start_ago %} · เริ่มเฝ้า {{ d.session_start_ago }}{% endif %}
         </div>
       </div>
       {% if d.status == 'armed' %}
@@ -148,64 +185,74 @@
       {% endif %}
     </div>
 
-    <div class="meta">
-      <div><div class="k">เกม</div><div class="v">{{ '✅ เปิดอยู่' if d.game_running else '❌ ปิด' }}</div></div>
-      <div><div class="k">ตัวละคร</div><div class="v">{{ d.character or '—' }}</div></div>
-      <div><div class="k">แมพ</div><div class="v">{{ d.map or '—' }}</div></div>
-      <div><div class="k">กู้เกมแล้ว</div><div class="v">{{ d.rejoin_count }} ครั้ง</div></div>
-    </div>
+    <div class="dev-body">
+      <div class="meta">
+        <div><div class="k">เกม</div><div class="v">{{ '✅ เปิดอยู่' if d.game_running else '❌ ปิด' }}</div></div>
+        <div><div class="k">ตัวละคร</div><div class="v">{{ d.character or '—' }}</div></div>
+        <div><div class="k">แมพ</div><div class="v">{{ d.map or '—' }}</div></div>
+        <div><div class="k">กู้เกมแล้ว</div><div class="v">{{ d.rejoin_count }} ครั้ง</div></div>
+      </div>
 
-    <div class="actions">
-      {% if d.armed %}
-        <button class="btn-stop" onclick="cmd('{{ d.device_id }}','disarm')">หยุดเฝ้า</button>
-      {% else %}
-        <button class="btn-start" onclick="cmd('{{ d.device_id }}','arm')">เริ่มเฝ้าเกม</button>
-      {% endif %}
-      <button class="btn-now" onclick="cmd('{{ d.device_id }}','rejoin_now')">กู้เกมทันที</button>
-      <button class="btn-shot" onclick="cmd('{{ d.device_id }}','screenshot')">📷 แคปภาพ</button>
-      <button class="btn-danger-ghost" onclick="removeDevice('{{ d.device_id }}','{{ d.name }}')">ลบเครื่อง</button>
-    </div>
-  </div>
-  {% endfor %}
+      <div class="actions">
+        {% if d.armed %}
+          <button class="btn-stop" onclick="cmd('{{ d.device_id }}','disarm')">หยุดเฝ้า</button>
+        {% else %}
+          <button class="btn-start" onclick="cmd('{{ d.device_id }}','arm')">เริ่มเฝ้าเกม</button>
+        {% endif %}
+        <button class="btn-now" onclick="cmd('{{ d.device_id }}','rejoin_now')">กู้เกมทันที</button>
+        <button class="btn-shot" onclick="cmd('{{ d.device_id }}','screenshot')">📷 แคปภาพ</button>
+        <button class="btn-danger-ghost" onclick="removeDevice('{{ d.device_id }}','{{ d.name }}')">ลบเครื่อง</button>
+      </div>
 
-  {% if screenshots %}
-  <h2 class="sec">ภาพหน้าจอล่าสุด <span style="font-size:12px;color:#64748b;font-weight:400">— กด “📷 แคปภาพ” ที่เครื่องเพื่อขอภาพใหม่ (เก็บ 7 วัน)</span></h2>
-  <div class="shots">
-    {% for s in screenshots %}
-    <div class="shot">
-      <a href="{{ s.url }}" target="_blank" rel="noopener">
-        <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ s.device_name }}" loading="lazy">
-      </a>
-      <div class="cap">
-        <span>{{ s.device_name }} · {{ s.ago }}</span>
-        <button class="del" onclick="removeShot({{ s.id }})">ลบ</button>
+      <div class="cols">
+        <div>
+          <div class="sub"><span>ภาพหน้าจอล่าสุด</span><span style="font-weight:400;text-transform:none">เก็บ 7 วัน</span></div>
+          {% if d.screenshots %}
+          <div class="shots">
+            {% for s in d.screenshots %}
+            <div class="shot">
+              <a href="{{ s.url }}" target="_blank" rel="noopener">
+                <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ d.name }}" loading="lazy">
+              </a>
+              <div class="cap">
+                <span>{{ s.ago }}</span>
+                <button class="del" onclick="removeShot({{ s.id }})">ลบ</button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="none">ยังไม่มีภาพ — กด “📷 แคปภาพ” เพื่อขอภาพจากเครื่องนี้</div>
+          {% endif %}
+        </div>
+
+        <div>
+          <div class="sub"><span>ประวัติเครื่องนี้</span></div>
+          {% if d.events %}
+          <div class="evlist">
+            {% for e in d.events %}
+            <div class="ev">
+              <span class="t">{{ e.ago }}</span>
+              <span>
+                {% if e.type == 'rejoin' %}🔄 กู้เกม (ครั้งที่ {{ e.detail.get('count','') }})
+                {% elif e.type == 'alert' %}🔴 กู้ไม่ได้ — ต้องตรวจสอบ
+                {% elif e.type == 'arm' %}▶️ เริ่มเฝ้า
+                {% elif e.type == 'disarm' %}⏹️ หยุดเฝ้า
+                {% elif e.type == 'rejoin_now' %}⚡ กู้เกมทันที (manual)
+                {% elif e.type == 'screenshot_now' %}📷 สั่งแคปภาพ
+                {% else %}{{ e.type }}{% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="none">ยังไม่มีเหตุการณ์</div>
+          {% endif %}
+        </div>
       </div>
     </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {% if events %}
-  <h2 class="sec">ประวัติล่าสุด</h2>
-  <table>
-    <tr><th>เวลา</th><th>เครื่อง</th><th>เหตุการณ์</th></tr>
-    {% for e in events %}
-    <tr>
-      <td style="color:#64748b">{{ e.ago }}</td>
-      <td>{{ e.device_name }}</td>
-      <td>
-        {% if e.type == 'rejoin' %}🔄 กู้เกม (ครั้งที่ {{ e.detail.get('count','') }})
-        {% elif e.type == 'alert' %}🔴 กู้ไม่ได้ — ต้องตรวจสอบ
-        {% elif e.type == 'arm' %}▶️ เริ่มเฝ้า
-        {% elif e.type == 'disarm' %}⏹️ หยุดเฝ้า
-        {% elif e.type == 'rejoin_now' %}⚡ กู้เกมทันที (manual)
-        {% elif e.type == 'screenshot_now' %}📷 สั่งแคปภาพ
-        {% else %}{{ e.type }}{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-  {% endif %}
+  </section>
+  {% endfor %}
 
 </div>
 
@@ -230,12 +277,6 @@ async function cmd(id, action) {
   toast('สั่ง ' + labels[action] + ' แล้ว — รอสักครู่');
   setTimeout(() => location.reload(), 1500);
 }
-async function removeShot(id) {
-  if (!confirm('ลบภาพนี้?')) return;
-  const r = await fetch(`/api/me/screenshots/${id}`, {method:'DELETE'});
-  if (r.ok) { toast('ลบแล้ว'); setTimeout(() => location.reload(), 600); }
-  else toast('ลบไม่สำเร็จ');
-}
 async function addDevice() {
   const name = prompt('ตั้งชื่อเครื่อง (เช่น เครื่อง 1 / ไอดีหลัก):', 'เครื่องใหม่');
   if (name === null) return;
@@ -253,6 +294,12 @@ async function addDevice() {
 function copyCode() {
   navigator.clipboard.writeText(document.getElementById('codeText').textContent)
     .then(() => toast('คัดลอกรหัสแล้ว'));
+}
+async function removeShot(id) {
+  if (!confirm('ลบภาพนี้?')) return;
+  const r = await fetch(`/api/me/screenshots/${id}`, {method:'DELETE'});
+  if (r.ok) { toast('ลบแล้ว'); setTimeout(() => location.reload(), 600); }
+  else toast('ลบไม่สำเร็จ');
 }
 async function removeDevice(id, name) {
   if (!confirm('ลบเครื่อง “' + name + '”? รหัสเครื่องจะใช้ไม่ได้อีก')) return;
