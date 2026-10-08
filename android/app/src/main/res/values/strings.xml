@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Rejoin Agent</string>
+    <string name="title">Auto-Rejoin Agent</string>
+    <string name="hint_code">รหัสเครื่อง (RJ-XXXXX-XXXXX)</string>
+    <string name="hint_server">เซิร์ฟเวอร์ (http://…)</string>
+    <string name="btn_start">เริ่มเฝ้า (arm)</string>
+    <string name="btn_stop">หยุดเฝ้า (disarm)</string>
+    <string name="status_idle">ยังไม่ทำงาน</string>
+    <string name="status_watching">กำลังเฝ้า…</string>
+    <string name="status_stopped">หยุดแล้ว</string>
+    <string name="channel_name">Rejoin Agent</string>
+    <string name="notif_title">Auto-Rejoin ทำงานอยู่</string>
+    <string name="notif_text">กำลังเฝ้าเกม…</string>
+</resources>
