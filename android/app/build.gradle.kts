@@ -43,9 +43,13 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     // เก็บ device_token แบบเข้ารหัส (EncryptedSharedPreferences)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    // คุยกับเว็บ (heartbeat/poll) — เตรียมไว้ใช้ในสเต็ปถัดไป
+    // คุยกับเว็บ (register/heartbeat/poll)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // unit tests (watchdog — pure logic)
+    testImplementation("junit:junit:4.13.2")
 }

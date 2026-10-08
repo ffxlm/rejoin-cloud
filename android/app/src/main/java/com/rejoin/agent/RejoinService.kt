@@ -9,44 +9,62 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
- * RejoinService — Foreground Service ที่จะเฝ้าเกมตลอดเวลา
+ * RejoinService — Foreground Service ที่เฝ้าเกมตลอดเวลา
  *
- * สเกเลตัน: แค่รันเป็น foreground + แสดง notification ค้างไว้ (พิสูจน์ว่า service
- * อยู่รอด) — สเต็ปถัดไปจะเพิ่ม:
- *   - File watcher อ่าน lua_state.json (คำนวณความเงียบ)
- *   - watchdog state machine (พอร์ตจาก watchdog.py)
- *   - root: force-stop / launch เกม + ยัด Lua
- *   - heartbeat/poll ไปเว็บด้วย OkHttp
+ * รัน AgentLoop (register → ติดตั้ง Lua → เฝ้า → รีเกม → รายงานเว็บ)
+ * เป็น foreground เพื่อกัน Doze/ระบบฆ่า (PLAN.md §16)
  */
 class RejoinService : Service() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var job: Job? = null
+    private lateinit var prefs: Prefs
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        prefs = Prefs(this)
         createChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(
-                NOTIF_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
-            )
-        } else {
-            startForeground(NOTIF_ID, notification)
+        startForegroundCompat(buildNotification(getString(R.string.notif_text)))
+
+        if (job == null) {
+            AgentState.reset()
+            job = scope.launch {
+                try {
+                    AgentLoop(applicationContext, prefs).run()
+                } catch (e: Exception) {
+                    AgentState.log("loop หยุด: ${e.message}")
+                    AgentState.setStatus("หยุด (เกิดข้อผิดพลาด)")
+                }
+            }
         }
-        // TODO(step 2): เริ่ม watchdog loop (coroutine) ตรงนี้
         return START_STICKY
     }
 
     override fun onDestroy() {
-        // TODO(step 2): ยกเลิก coroutine / ปิด resource
+        job = null
+        scope.cancel()
         super.onDestroy()
+    }
+
+    private fun startForegroundCompat(notification: Notification) {
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
     }
 
     private fun createChannel() {
@@ -56,15 +74,14 @@ class RejoinService : Service() {
                 getString(R.string.channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             )
-            val nm = getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
-    private fun buildNotification(): Notification =
+    private fun buildNotification(text: String): Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notif_title))
-            .setContentText(getString(R.string.notif_text))
+            .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setOngoing(true)
             .build()
