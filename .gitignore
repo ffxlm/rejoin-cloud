@@ -1,0 +1,18 @@
+# ---- Python ----
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# ---- เครื่องมือ/ไบนารี (ไม่เก็บใน git) ----
+.tools/
+
+# ---- ไฟล์ชั่วคราว/หลักฐานขนาดใหญ่ ----
+phase0/artifacts/
+*.png
+*.apk
+
+# ---- OS/editor ----
+.DS_Store
+*.swp
