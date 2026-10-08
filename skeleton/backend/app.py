@@ -42,6 +42,7 @@ class HeartbeatIn(BaseModel):
     game_running: bool = False
     lua_active: bool = False
     lua_age_sec: Optional[int] = None
+    lua_state: Optional[str] = None
     avatar: Optional[str] = None
     character: Optional[str] = None
     map: Optional[str] = None
@@ -87,6 +88,7 @@ def register(body: RegisterIn):
         "last_seen": 0,
         "game_running": False,
         "lua_active": False,
+        "lua_state": None,
         "rejoin_count": 0,
         "session_start": None,
         "avatar": None, "character": None, "map": None,
@@ -109,6 +111,7 @@ def heartbeat(body: HeartbeatIn, authorization: Optional[str] = Header(None)):
         "game_running": body.game_running,
         "lua_active": body.lua_active,
         "lua_age_sec": body.lua_age_sec,
+        "lua_state": body.lua_state,
         "avatar": body.avatar,
         "character": body.character,
         "map": body.map,
@@ -193,6 +196,7 @@ def dashboard():
           <td><span style="color:{color};font-weight:bold">● {st}</span></td>
           <td>{'✅' if d.get('game_running') else '❌'}</td>
           <td>{'✅' if d.get('lua_active') else '❌'}</td>
+          <td>{d.get('lua_state') or '-'}</td>
           <td>{d.get('avatar') or '-'}</td>
           <td>{d.get('character') or '-'}</td>
           <td>{d.get('map') or '-'}</td>
@@ -214,9 +218,9 @@ def dashboard():
     th{{background:#1e293b}} h1{{color:#38bdf8}} h2{{color:#38bdf8;margin-top:30px}}</style></head>
     <body><h1>Rejoin — Walking Skeleton</h1>
     <p>dead-man's switch ฝั่งเว็บ: ไม่ได้ยิน heartbeat > 30s = offline</p>
-    <table><tr><th>device</th><th>status</th><th>game</th><th>lua</th><th>avatar</th>
+    <table><tr><th>device</th><th>status</th><th>game</th><th>lua</th><th>lua_state</th><th>avatar</th>
     <th>character</th><th>map</th><th>last_seen</th><th>rejoin</th></tr>
-    {rows or '<tr><td colspan="9">ยังไม่มีเครื่อง</td></tr>'}</table>
+    {rows or '<tr><td colspan="10">ยังไม่มีเครื่อง</td></tr>'}</table>
     {events_html}
     </body></html>"""
     return HTMLResponse(html)

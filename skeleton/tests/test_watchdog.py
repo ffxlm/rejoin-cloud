@@ -12,8 +12,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from skeleton.agent.watchdog import Action, Config, Observation, Phase, Watchdog
 
 
-def obs(game=True, age=0, online=True):
-    return Observation(online=online, game_running=game, lua_age_sec=age)
+def obs(game=True, age=0, online=True, state=None):
+    return Observation(online=online, game_running=game, lua_age_sec=age,
+                       lua_state=state)
 
 
 class TestBasePhases(unittest.TestCase):
@@ -111,6 +112,48 @@ class TestRejoin(unittest.TestCase):
         acts = self.w.observe(100, obs(game=True, age=70))
         self.assertEqual(acts, [])
         self.assertEqual(self.w.phase, Phase.GAME_RUNNING)
+
+
+class TestSlowNetwork(unittest.TestCase):
+    """เน็ตช้า/เกมโหลดนาน — ต้องไม่ตัดสินใจผิด (false positive)"""
+
+    def test_long_load_does_not_alert_early(self):
+        # timeout 300: หลัง rejoin 150 วิ ต้องยังรอ ไม่ alert
+        w = Watchdog(Config(silence_sec=60, rejoin_timeout_sec=300,
+                            backoff_sec=(30, 60, 120), max_attempts=3))
+        w.arm(0)
+        self.assertEqual(w.observe(100, obs(game=True, age=70)), [Action.REJOIN])
+        acts = w.observe(250, obs(game=True, age=220))   # ผ่านไป 150 วิ < 300
+        self.assertEqual(acts, [])
+        self.assertEqual(w.phase, Phase.REJOINING)
+        self.assertEqual(w.attempts, 0)
+
+    def test_loading_state_is_alive_no_rejoin(self):
+        # Lua สด + บอกว่า loading → ถือว่า alive ห้ามรีเกม
+        w = Watchdog(Config(silence_sec=60, rejoin_timeout_sec=300))
+        w.arm(0)
+        w.observe(100, obs(game=True, age=70))                     # rejoin
+        acts = w.observe(200, obs(game=True, age=5, state="loading"))
+        self.assertEqual(acts, [])
+        self.assertEqual(w.phase, Phase.ARMED)
+        self.assertEqual(w.attempts, 0)
+
+    def test_recovery_after_slow_load(self):
+        # โหลดเสร็จช้า (แต่ทัน timeout) → กลับ armed ไม่นับ fail
+        w = Watchdog(Config(silence_sec=60, rejoin_timeout_sec=300))
+        w.arm(0)
+        w.observe(100, obs(game=True, age=70))
+        acts = w.observe(280, obs(game=True, age=4, state="in_game"))
+        self.assertEqual(acts, [])
+        self.assertEqual(w.phase, Phase.ARMED)
+        self.assertEqual(w.rejoin_count, 1)
+        self.assertEqual(w.attempts, 0)
+
+    def test_loading_property(self):
+        self.assertTrue(obs(age=1, state="loading").loading)
+        self.assertTrue(obs(age=1, state="menu").loading)
+        self.assertFalse(obs(age=1, state="in_game").loading)
+        self.assertFalse(obs(age=1, state=None).loading)
 
 
 if __name__ == "__main__":

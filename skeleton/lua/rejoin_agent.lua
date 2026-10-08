@@ -26,6 +26,27 @@ local function getPlayerInfo()
   return info
 end
 
+-- ---- ตรวจสถานะเกม: in_game / loading / unknown ----
+-- ใช้ให้ APK/watchdog แยก "กำลังโหลด" (อย่ารีเกม) ออกจาก "ตาย" (รีเกม)
+local function getState()
+  local res = "unknown"
+  pcall(function()
+    local Players = game:GetService("Players")
+    local lp = Players.LocalPlayer
+    if not lp then
+      res = "loading"                 -- ยังไม่เข้าเกม / กำลังเชื่อม
+      return
+    end
+    local ch = lp.Character
+    if ch and ch:FindFirstChildOfClass("Humanoid") then
+      res = "in_game"                 -- ตัวละครเกิดแล้ว = อยู่ในเกมจริง
+    else
+      res = "loading"                 -- เข้าเกมแล้วแต่ตัวละครยังไม่เกิด
+    end
+  end)
+  return res
+end
+
 local function jsonEscape(s)
   s = tostring(s)
   return (s:gsub('\\', '\\\\'):gsub('"', '\\"'):gsub('\n', '\\n'):gsub('\r', '\\r'):gsub('\t', '\\t'))
@@ -43,7 +64,7 @@ local function buildState()
   local ts = os.time()
   local parts = {
     '"v":1',
-    '"state":"in_game"',
+    '"state":"' .. getState() .. '"',
     '"avatar":"' .. jsonEscape(p.avatar or "") .. '"',
     '"character":"' .. jsonEscape(p.character or "") .. '"',
     '"map":"' .. jsonEscape(tostring(placeId)) .. '"',

@@ -40,12 +40,20 @@ class Observation:
     online: bool = False
     game_running: bool = False
     lua_age_sec: Optional[int] = None   # None = ไม่มี state จาก Lua
+    lua_state: Optional[str] = None     # "in_game" | "loading" | "menu" | "unknown" | None
+
+    @property
+    def loading(self) -> bool:
+        """เกมกำลังโหลด/เข้าแมพ — อย่ารีเกมทับ (Lua ยังสดอยู่ แต่ยังไม่ in_game)"""
+        return self.lua_state in ("loading", "joining", "menu")
 
 
 @dataclass
 class Config:
-    silence_sec: int = 60          # เงียบนานเท่านี้ = ตัดสินว่าตาย
-    rejoin_timeout_sec: int = 90   # รอกู้กี่วิก่อนถือว่าล้มเหลว
+    silence_sec: int = 60          # เงียบนานเท่านี้ = ตัดสินว่าตาย (Lua ไม่เขียนไฟล์)
+    # รอกู้กี่วิก่อนถือว่าล้มเหลว — ต้องครอบเวลาเปิดเกม+โหลดแมพ
+    # เน็ตคลาวโฟนปกติใช้ ~60-120 วิ; ตั้ง 300 เพื่อกันเน็ตช้า/เกมโหลดนาน (ปรับได้)
+    rejoin_timeout_sec: int = 300
     backoff_sec: tuple = (30, 60, 120)  # หน่วงระหว่างครั้ง (กัน rejoin storm)
     max_attempts: int = 3          # เกินนี้ → alert
 

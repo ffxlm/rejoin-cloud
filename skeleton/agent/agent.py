@@ -109,19 +109,23 @@ class Agent:
             running = self.dev.game_running()
 
             age = None
+            lua_state = None
             extra = {}
             if state:
                 try:
                     age = int(time.time()) - int(state.get("ts", 0))
                 except Exception:
                     age = None
+                lua_state = state.get("state")
                 extra = {
                     "avatar": state.get("avatar"),
                     "character": state.get("character"),
                     "map": state.get("map"),
+                    "lua_state": lua_state,
                 }
 
-            obs = Observation(online=True, game_running=running, lua_age_sec=age)
+            obs = Observation(online=True, game_running=running,
+                              lua_age_sec=age, lua_state=lua_state)
             actions = self.wd.observe(int(time.time()), obs)
 
             for a in actions:
@@ -151,7 +155,8 @@ def main():
     ap.add_argument("--lua", default="skeleton/lua/rejoin_agent.lua")
     ap.add_argument("--interval", type=int, default=10)
     ap.add_argument("--silence", type=int, default=60)
-    ap.add_argument("--timeout", type=int, default=90)
+    ap.add_argument("--timeout", type=int, default=300,
+                    help="รอกู้กี่วิก่อนถือว่าล้มเหลว (ต้องครอบเวลาโหลดเกม; เน็ตช้าตั้งสูงขึ้นได้)")
     args = ap.parse_args()
 
     cfg = Config(silence_sec=args.silence, rejoin_timeout_sec=args.timeout)

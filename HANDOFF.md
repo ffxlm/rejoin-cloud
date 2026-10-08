@@ -72,13 +72,14 @@ python3 -m venv .venv
 ## 4. งานต่อไป — เรียงตามลำดับความสำคัญ
 
 ### 🔴 P0 — แก้ก่อน (เจอจากการเทสต์จริง)
-- [ ] **ยืด `rejoin_timeout`** จาก 90 → ~300 วิ
-  - เหตุ: เน็ตช้า เกมโหลด 3 นาที → ตอนนี้ watchdog นับ fail ทั้งที่กำลังโหลด (false positive)
-  - ที่แก้: `skeleton/agent/agent.py` (`--timeout`), `skeleton/agent/watchdog.py` (`Config.rejoin_timeout_sec`)
-  - เพิ่มเทสต์: จำลองโหลดนาน > timeout ว่าต้องไม่ alert
-- [ ] **แยก "กำลังโหลด" ออกจาก "ตาย"** — ใช้ state จาก Lua (`loading`/`menu`) ไม่ใช่แค่เวลา
-  - Lua ควรเขียน `state` ให้ละเอียดขึ้น (ดูข้อ 5)
+- [x] **ยืด `rejoin_timeout`** — default 90 → **300 วิ** และปรับได้ผ่าน `--timeout` / `Config.rejoin_timeout_sec`
+  - หมายเหตุ: 300 คือค่ากันเน็ตช้า/เกมโหลดนาน (ค่า default) — เน็ตคลาวโฟนปกติลดได้
+- [x] **แยก "กำลังโหลด" ออกจาก "ตาย"** — Lua เขียน `state` (`in_game`/`loading`) แล้ว; watchdog มี `Observation.lua_state` + `loading` property
+  - ที่แก้: `skeleton/lua/rejoin_agent.lua` (`getState`), `skeleton/agent/watchdog.py`, `skeleton/agent/agent.py`
+  - เทสต์: `TestSlowNetwork` 4 เคส (loading = alive, โหลดช้าทัน timeout ไม่ alert)
 - [ ] **`adb reverse`/listener ของเก่า** — ลบทิ้งได้ ไม่ใช้ในดีไซน์ใหม่
+  - ยังรันค้างอยู่: `phase0/local_listener.py` (pid 2535) — `pkill -f local_listener`
+  - หมายเหตุ: ไฟล์ `phase0/` เก็บไว้เป็นหลักฐาน Phase 0 ก่อน (ลบโปรเซสได้ แต่ยังไม่ต้องลบไฟล์)
 
 ### 🟠 P1 — เฟส 1 จริง: APK Kotlin (แทน agent.py)
 - [ ] สร้าง Android project (Kotlin, Gradle) — ต้องติดตั้ง Android SDK ก่อน
