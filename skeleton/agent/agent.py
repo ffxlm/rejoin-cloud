@@ -9,7 +9,8 @@ loop:
   2) ป้อน watchdog → ได้ action
   3) ทำ action (REJOIN / LAUNCH / ALERT)
   4) ส่ง heartbeat + event ไปเว็บ
-  5) รับคำสั่ง arm/disarm จาก response
+  5) รับคำสั่ง arm/disarm/rejoin_now/screenshot_now จาก response
+  6) แคปหน้าจอ (ตามคำสั่ง / ตอน alert / เป็นรอบ) แล้วอัปขึ้นเว็บ
 
 รัน:
   python3 -m skeleton.agent.agent \
@@ -20,9 +21,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import tempfile
 import time
 import urllib.request
 from typing import Optional
+
+import httpx
 
 from .device import Device
 from .watchdog import Action, Config, Observation, Watchdog
@@ -43,18 +48,20 @@ def post_json(url: str, data: dict, token: Optional[str] = None) -> dict:
 
 class Agent:
     def __init__(self, adb, serial, server, code, place_id, lua_path,
-                 interval=10, cfg: Optional[Config] = None):
+                 interval=10, cfg: Optional[Config] = None, shot_interval=0):
         self.dev = Device(adb, serial)
         self.server = server.rstrip("/")
         self.code = code
         self.place_id = place_id
         self.lua_path = lua_path
         self.interval = interval
+        self.shot_interval = shot_interval  # 0 = ปิด (แคปเฉพาะสั่ง/ตอน alert)
         self.wd = Watchdog(cfg or Config())
         self.token: Optional[str] = None
         self.device_id: Optional[str] = None
         self.session_start = int(time.time())
         self.armed_reported = False
+        self.last_shot = 0
 
     # ---------- backend ----------
     def register(self) -> bool:
@@ -86,6 +93,38 @@ class Agent:
         r = post_json(f"{self.server}/api/agent/heartbeat", payload, self.token)
         return r.get("command")
 
+    # ---------- screenshot ----------
+    def send_screenshot(self) -> bool:
+        """แคปหน้าจอแล้วอัปขึ้นเว็บ (multipart) — คืน True ถ้าสำเร็จ"""
+        if not self.token:
+            return False
+        fd, path = tempfile.mkstemp(suffix=".png", prefix="rejoin_shot_")
+        os.close(fd)
+        try:
+            if not self.dev.capture_screenshot(path):
+                print("[agent] screenshot: แคปไม่สำเร็จ", flush=True)
+                return False
+            with open(path, "rb") as f:
+                content = f.read()
+            files = {"file": ("screenshot.png", content, "image/png")}
+            r = httpx.post(
+                f"{self.server}/api/agent/screenshot",
+                headers={"Authorization": f"Bearer {self.token}"},
+                files=files,
+                timeout=30,
+            )
+            ok = r.status_code == 200
+            print(f"[agent] screenshot upload: {r.status_code}", flush=True)
+            return ok
+        except Exception as e:
+            print(f"[agent] screenshot error: {e}", flush=True)
+            return False
+        finally:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
     # ---------- actions ----------
     def do_action(self, action: Action) -> None:
         if action in (Action.REJOIN, Action.LAUNCH):
@@ -99,6 +138,8 @@ class Agent:
         elif action == Action.ALERT:
             print("[agent] !!! ALERT: กู้ไม่ได้ ต้องให้คนดู", flush=True)
             self.send_event("alert", {"attempts": self.wd.attempts})
+            # แคปหลักฐานตอน alert (ให้คนดูว่าเกิดอะไรขึ้น)
+            self.send_screenshot()
 
     # ---------- main loop ----------
     def run(self) -> None:
@@ -139,6 +180,16 @@ class Agent:
             elif cmd == "disarm" and self.wd.armed:
                 self.wd.disarm()
                 print("[agent] disarmed by web", flush=True)
+            elif cmd == "screenshot_now":
+                print("[agent] screenshot by web", flush=True)
+                self.send_screenshot()
+
+            # แคปเป็นรอบเมื่อ arm อยู่ (ถ้าตั้ง shot_interval > 0)
+            now = int(time.time())
+            if (self.wd.armed and self.shot_interval > 0
+                    and now - self.last_shot >= self.shot_interval):
+                if self.send_screenshot():
+                    self.last_shot = now
 
             print(f"[agent] phase={self.wd.phase.value} game={running} "
                   f"age={age}s rejoin={self.wd.rejoin_count} actions={[a.value for a in actions]}",
@@ -158,11 +209,14 @@ def main():
     ap.add_argument("--silence", type=int, default=60)
     ap.add_argument("--timeout", type=int, default=300,
                     help="รอกู้กี่วิก่อนถือว่าล้มเหลว (ต้องครอบเวลาโหลดเกม; เน็ตช้าตั้งสูงขึ้นได้)")
+    ap.add_argument("--screenshot-interval", type=int, default=0,
+                    help="แคปหน้าจออัตโนมัติทุกกี่วิขณะ arm (0 = ปิด; ยังสั่งแคปจากเว็บได้เสมอ)")
     args = ap.parse_args()
 
     cfg = Config(silence_sec=args.silence, rejoin_timeout_sec=args.timeout)
     agent = Agent(args.adb, args.device, args.server, args.code,
-                  args.place, args.lua, args.interval, cfg)
+                  args.place, args.lua, args.interval, cfg,
+                  shot_interval=args.screenshot_interval)
     agent.run()
 
 

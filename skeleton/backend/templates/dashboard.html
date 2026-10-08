@@ -42,12 +42,23 @@
   .btn-start { background:#22c55e; color:#052e16; }
   .btn-stop  { background:#ef4444; color:#fff; }
   .btn-now   { background:#334155; color:#e2e8f0; }
+  .btn-shot  { background:#0ea5e9; color:#082f49; }
   .btn-ghost { background:transparent; color:#94a3b8; border:1px solid #334155; }
   .btn-primary { background:#38bdf8; color:#082f49; }
   .btn-danger-ghost { background:transparent; color:#f87171; border:1px solid #7f1d1d;
                       padding:8px 12px; font-size:13px; }
   .empty { text-align:center; padding:60px 20px; color:#64748b; }
   .empty h2 { color:#cbd5e1; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+  .shot { background:#0b1220; border:1px solid #1e293b; border-radius:12px;
+          overflow:hidden; }
+  .shot a { display:block; line-height:0; }
+  .shot img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block;
+              background:#0b1220; }
+  .shot .cap { padding:8px 10px; font-size:12px; color:#94a3b8; display:flex;
+               justify-content:space-between; gap:6px; align-items:center; }
+  .shot .cap .del { color:#f87171; cursor:pointer; border:0; background:transparent;
+                    font-size:12px; padding:2px 4px; }
   .help { background:#0e1a2b; border:1px dashed #334155; border-radius:14px;
           padding:16px 20px; margin:16px 0; font-size:14px; color:#94a3b8; line-height:1.7; }
   .help b { color:#e2e8f0; }
@@ -151,10 +162,28 @@
         <button class="btn-start" onclick="cmd('{{ d.device_id }}','arm')">เริ่มเฝ้าเกม</button>
       {% endif %}
       <button class="btn-now" onclick="cmd('{{ d.device_id }}','rejoin_now')">กู้เกมทันที</button>
+      <button class="btn-shot" onclick="cmd('{{ d.device_id }}','screenshot')">📷 แคปภาพ</button>
       <button class="btn-danger-ghost" onclick="removeDevice('{{ d.device_id }}','{{ d.name }}')">ลบเครื่อง</button>
     </div>
   </div>
   {% endfor %}
+
+  {% if screenshots %}
+  <h2 class="sec">ภาพหน้าจอล่าสุด <span style="font-size:12px;color:#64748b;font-weight:400">— กด “📷 แคปภาพ” ที่เครื่องเพื่อขอภาพใหม่ (เก็บ 7 วัน)</span></h2>
+  <div class="shots">
+    {% for s in screenshots %}
+    <div class="shot">
+      <a href="{{ s.url }}" target="_blank" rel="noopener">
+        <img src="{{ s.url }}" alt="ภาพหน้าจอ {{ s.device_name }}" loading="lazy">
+      </a>
+      <div class="cap">
+        <span>{{ s.device_name }} · {{ s.ago }}</span>
+        <button class="del" onclick="removeShot({{ s.id }})">ลบ</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   {% if events %}
   <h2 class="sec">ประวัติล่าสุด</h2>
@@ -170,6 +199,7 @@
         {% elif e.type == 'arm' %}▶️ เริ่มเฝ้า
         {% elif e.type == 'disarm' %}⏹️ หยุดเฝ้า
         {% elif e.type == 'rejoin_now' %}⚡ กู้เกมทันที (manual)
+        {% elif e.type == 'screenshot_now' %}📷 สั่งแคปภาพ
         {% else %}{{ e.type }}{% endif %}
       </td>
     </tr>
@@ -188,12 +218,23 @@ function toast(msg) {
   setTimeout(() => t.style.display = 'none', 2500);
 }
 async function cmd(id, action) {
-  const labels = {arm:'เริ่มเฝ้าเกม', disarm:'หยุดเฝ้า', rejoin_now:'กู้เกมทันที'};
+  const labels = {arm:'เริ่มเฝ้าเกม', disarm:'หยุดเฝ้า', rejoin_now:'กู้เกมทันที', screenshot:'แคปภาพ'};
   if (action === 'disarm' && !confirm('หยุดเฝ้าเกม? ระบบจะไม่กู้เกมให้จนกว่าจะเริ่มใหม่')) return;
   const r = await fetch(`/api/device/${id}/${action}`, {method:'POST'});
   if (!r.ok) { toast('ทำรายการไม่สำเร็จ'); return; }
+  if (action === 'screenshot') {
+    toast('สั่งแคปภาพแล้ว — รอสักครู่ (ภาพจะโผล่ในหน้านี้)');
+    setTimeout(() => location.reload(), 6000);
+    return;
+  }
   toast('สั่ง ' + labels[action] + ' แล้ว — รอสักครู่');
   setTimeout(() => location.reload(), 1500);
+}
+async function removeShot(id) {
+  if (!confirm('ลบภาพนี้?')) return;
+  const r = await fetch(`/api/me/screenshots/${id}`, {method:'DELETE'});
+  if (r.ok) { toast('ลบแล้ว'); setTimeout(() => location.reload(), 600); }
+  else toast('ลบไม่สำเร็จ');
 }
 async function addDevice() {
   const name = prompt('ตั้งชื่อเครื่อง (เช่น เครื่อง 1 / ไอดีหลัก):', 'เครื่องใหม่');

@@ -9,6 +9,7 @@ routers/agent.py — endpoints ที่ APK เรียก (ยืนยัน
 from __future__ import annotations
 
 import os
+import secrets
 import time
 from datetime import datetime, timezone
 
@@ -21,6 +22,7 @@ from ..deps import get_current_device, get_db, get_settings, get_store
 from ..models import Device, DeviceState, DeviceToken, Event, Screenshot
 from ..redis_store import Store
 from ..schemas import EventIn, HeartbeatIn, HeartbeatOut, RegisterIn, RegisterOut
+from ..screenshots import cleanup_old_screenshots, url_for
 from ..security import generate_token, hash_secret, lookup_key, verify_secret
 
 router = APIRouter()
@@ -149,13 +151,51 @@ async def screenshot(
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
+    """รับภาพหน้าจอจาก APK (multipart) → เก็บไฟล์ + ลง DB + ลบของเก่าตาม retention"""
+    content_type = (file.content_type or "").lower()
+    ext = ".png" if "png" in content_type else ".jpg"
+    name = f"dev{device.id}_{int(time.time())}_{secrets.token_hex(3)}{ext}"
     os.makedirs(settings.screenshot_dir, exist_ok=True)
-    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
-    name = f"dev{device.id}_{int(time.time())}{ext}"
     path = os.path.join(settings.screenshot_dir, name)
-    with open(path, "wb") as f:
-        while chunk := await file.read(64 * 1024):
-            f.write(chunk)
-    db.add(Screenshot(device_id=device.id, url=f"/{settings.screenshot_dir}/{name}"))
+
+    # อ่านเป็น chunk กันไฟล์ยักษ์กลืน RAM
+    size = 0
+    try:
+        with open(path, "wb") as f:
+            while chunk := await file.read(64 * 1024):
+                size += len(chunk)
+                if size > settings.screenshot_max_bytes:
+                    raise HTTPException(status_code=413, detail="ไฟล์ใหญ่เกินกำหนด")
+                f.write(chunk)
+    except HTTPException:
+        _safe_remove(path)
+        raise
+    except Exception:
+        _safe_remove(path)
+        raise HTTPException(status_code=400, detail="รับไฟล์ไม่สำเร็จ")
+
+    if size == 0:
+        _safe_remove(path)
+        raise HTTPException(status_code=400, detail="ไฟล์ว่าง")
+
+    url = url_for(name)
+    row = Screenshot(device_id=device.id, url=url)
+    db.add(row)
     await db.commit()
-    return {"ok": True, "url": f"/{settings.screenshot_dir}/{name}"}
+    await db.refresh(row)
+
+    # ลบภาพที่เก่ากว่า retention (best-effort — ไม่ให้ล้มทั้ง request)
+    try:
+        await cleanup_old_screenshots(db, settings)
+    except Exception:
+        pass
+
+    return {"ok": True, "id": row.id, "url": url, "ts": int(row.ts.timestamp())}
+
+
+def _safe_remove(path: str) -> None:
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+    except OSError:
+        pass

@@ -103,6 +103,18 @@ Content-Type: application/json
 { "command": "rejoin_now", "id": "cmd_123" }
 ```
 
+### 2.3 screenshot (multipart)
+```
+POST /api/agent/screenshot
+Authorization: Bearer <device_token>
+Content-Type: multipart/form-data   field: file (image/png | image/jpeg)
+```
+- APK แคปด้วย root `screencap -p` → ย่อ ≤1280px → JPEG q70 → อัป
+- เว็บเก็บไฟล์ที่ `SCREENSHOT_DIR`, DB เก็บ url (`/screenshots/<name>`), เสิร์ฟผ่าน static mount
+- จำกัดขนาด `SCREENSHOT_MAX_BYTES` (default 5MB); เกิน → 413
+- retention: ลบภาพเก่ากว่า `SCREENSHOT_RETENTION_DAYS` (default 7) ทั้งไฟล์ + DB
+- ฝั่ง APK แคปเมื่อ: (1) คำสั่ง `screenshot_now` (2) ตอน `alert` (3) เป็นรอบถ้าตั้ง interval > 0
+
 ---
 
 ## 3. เว็บ → ผู้ใช้ (แดชบอร์ด)
@@ -119,6 +131,10 @@ Content-Type: application/json
 | GET | `/api/download/lua` | ดาวน์โหลด Lua (ตาม device_token) |
 | POST | `/api/device/:id/arm` | เริ่ม auto-rejoin |
 | POST | `/api/device/:id/disarm` | หยุด auto-rejoin |
+| POST | `/api/device/:id/rejoin_now` | สั่งกู้เกมทันที |
+| POST | `/api/device/:id/screenshot` | สั่งแคปหน้าจอทันที (queue `screenshot_now`) |
+| GET | `/api/me/screenshots` | รายการภาพหน้าจอล่าสุด (`?device_id=&limit=`) |
+| DELETE | `/api/me/screenshots/:id` | ลบภาพ 1 รูป |
 | WS | `/ws` | อัปเดตสถานะสด |
 
 ---

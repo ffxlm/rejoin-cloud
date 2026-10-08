@@ -5,6 +5,8 @@ routers/me.py — แดชบอร์ดของผู้ใช้ (ต้อ
 - POST   /api/me/devices            เพิ่มเครื่อง → คืน device_code (ครั้งเดียว)
 - DELETE /api/me/devices/{id}       ลบเครื่อง + revoke รหัสทั้งหมด
 - GET    /api/me/events             ประวัติเหตุการณ์ล่าสุด
+- GET    /api/me/screenshots        รายการภาพหน้าจอล่าสุด
+- DELETE /api/me/screenshots/{id}   ลบภาพหน้าจอ 1 รูป
 - GET    /api/download/lua          ดาวน์โหลด Lua
 - GET    /api/download/apk          ดาวน์โหลด APK (ถ้ามี)
 """
@@ -25,9 +27,10 @@ from ..deps import (
     get_store,
     resolve_owned_device,
 )
-from ..models import Device, DeviceToken, Event, User
+from ..models import Device, DeviceToken, Event, Screenshot, User
 from ..redis_store import Store
 from ..schemas import DeviceCreateIn, DeviceCreateOut
+from ..screenshots import file_path
 from ..security import generate_device_code, hash_secret, lookup_key
 from ..serializers import build_device_view
 
@@ -148,6 +151,78 @@ async def list_events(
             for e in rows
         ]
     }
+
+
+@router.get("/api/me/screenshots")
+async def list_screenshots(
+    device_id: str | None = None,
+    limit: int = 24,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """รายการภาพหน้าจอล่าสุดของทุกเครื่อง (หรือเครื่องเดียวถ้าระบุ device_id)"""
+    limit = max(1, min(limit, 100))
+    rows = (
+        await db.execute(select(Device.id, Device.name).where(Device.user_id == user.id))
+    ).all()
+    name_by_id = {r.id: r.name for r in rows}
+    ids = list(name_by_id.keys())
+    if device_id:
+        try:
+            want = int(device_id)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=404, detail="ไม่พบเครื่อง")
+        if want not in name_by_id:
+            raise HTTPException(status_code=404, detail="ไม่พบเครื่อง")
+        ids = [want]
+    if not ids:
+        return {"screenshots": []}
+
+    shots = (
+        await db.execute(
+            select(Screenshot)
+            .where(Screenshot.device_id.in_(ids))
+            .order_by(Screenshot.ts.desc())
+            .limit(limit)
+        )
+    ).scalars().all()
+    return {
+        "screenshots": [
+            {
+                "id": s.id,
+                "device_id": str(s.device_id),
+                "device_name": name_by_id.get(s.device_id, f"เครื่อง {s.device_id}"),
+                "url": s.url,
+                "ts": int(s.ts.timestamp()),
+            }
+            for s in shots
+        ]
+    }
+
+
+@router.delete("/api/me/screenshots/{screenshot_id}")
+async def delete_screenshot(
+    screenshot_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    """ลบภาพหน้าจอ 1 รูป (ไฟล์ + DB)"""
+    row = await db.get(Screenshot, screenshot_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="ไม่พบภาพ")
+    device = await db.get(Device, row.device_id)
+    if device is None or device.user_id != user.id:
+        raise HTTPException(status_code=404, detail="ไม่พบภาพ")
+    path = file_path(settings, row.url)
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+    except OSError:
+        pass
+    await db.delete(row)
+    await db.commit()
+    return {"ok": True}
 
 
 @router.get("/api/download/lua")

@@ -49,6 +49,11 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_TIMEOUT, 300)
         set(v) = sp.edit().putInt(KEY_TIMEOUT, v).apply()
 
+    /** แคปหน้าจออัตโนมัติทุกกี่วินาทีขณะ arm (0 = ปิด; สั่งแคปจากเว็บได้เสมอ) */
+    var screenshotIntervalSec: Int
+        get() = sp.getInt(KEY_SHOT_INTERVAL, 0)
+        set(v) = sp.edit().putInt(KEY_SHOT_INTERVAL, v).apply()
+
     companion object {
         private const val KEY_DEVICE_CODE = "device_code"
         private const val KEY_SERVER_URL = "server_url"
@@ -57,6 +62,7 @@ class Prefs(context: Context) {
         private const val KEY_INTERVAL = "interval_sec"
         private const val KEY_SILENCE = "silence_sec"
         private const val KEY_TIMEOUT = "timeout_sec"
+        private const val KEY_SHOT_INTERVAL = "screenshot_interval_sec"
 
         const val DEFAULT_SERVER = "https://rejoin.example.com"  // ← แก้เป็นโดเมนจริงของคุณ
         const val DEFAULT_PLACE_ID = 107778070777162L

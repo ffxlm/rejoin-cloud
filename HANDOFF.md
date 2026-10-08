@@ -19,7 +19,8 @@
 - ✅ **APK ทำงานจริงแล้ว** — พอร์ต agent.py → Kotlin ครบ (register/Lua/watchdog/root rejoin)
   ทดสอบ end-to-end ผ่าน **public HTTPS** (ข้ามเน็ตจริง) สำเร็จ: arm → เปิดเกมเอง → armed
 - ✅ **Deploy stack** — Dockerfile + compose (app/pg/redis/Caddy HTTPS) + `DEPLOY.md` พร้อมขึ้น VPS
-- ⏭️ เหลือ: deploy จริงบน VPS + Discord OAuth จริง + P2 (alert/screenshot/WebSocket)
+- ✅ **แคปหน้าจอ (P2)** — root screencap → ย่อ → JPEG → อัปเว็บ + ปุ่ม/แสดงผลบนแดชบอร์ด + retention 7 วัน
+- ⏭️ เหลือ: deploy จริงบน VPS + Discord OAuth จริง + P2 ที่เหลือ (alert/WebSocket)
 
 ---
 
@@ -115,7 +116,11 @@ python3 -m venv .venv
 - [ ] ยืนยัน Discord OAuth กับ app จริง (ต้องมี DISCORD_CLIENT_ID/SECRET)
 
 ### 🟡 P2 — ฟีเจอร์ใช้งานจริง
-- [ ] แคปภาพหน้าจอ (root `screencap`) + ย่อ + JPEG → อัปขึ้น S3/MinIO + retention 7 วัน
+- [x] **แคปภาพหน้าจอ** — root `screencap` + ย่อ + JPEG → อัปขึ้นเว็บ + retention 7 วัน
+  - ฝั่งเว็บ: `POST /api/device/:id/screenshot` (สั่ง), `GET /api/me/screenshots`, `DELETE /api/me/screenshots/:id`
+  - APK: `Screenshot.kt` (แคป/ย่อ/บีบอัด) + `Api.uploadScreenshot` + ปุ่ม “📷 แคปภาพ” บนแดชบอร์ด
+  - Python agent: `Device.capture_screenshot` + `Agent.send_screenshot` (มีไว้ทดสอบก่อนพอร์ต)
+  - เก็บไฟล์ที่ `SCREENSHOT_DIR` (เสิร์ฟผ่าน `/screenshots`), ลบเก่าอัตโนมัติตาม `SCREENSHOT_RETENTION_DAYS`
 - [ ] avatar/ตัวละคร/แมพ จาก Lua (มีแล้วบางส่วน — ทำ fallback)
 - [ ] แจ้งเตือน LINE/Telegram/Discord webhook ตอน alert
 - [ ] WebSocket อัปเดตแดชบอร์ดสด
@@ -191,7 +196,8 @@ rejoin-cloud/
 │       ├── AgentLoop.kt        # orchestrator (register→Lua→เฝ้า→รีเกม)
 │       ├── Watchdog.kt         # dead-man's switch (pure)
 │       ├── RootShell.kt        # su -c (pidof/force-stop/launch/push Lua)
-│       ├── Api.kt              # OkHttp (register/heartbeat/event/lua)
+│       ├── Api.kt              # OkHttp (register/heartbeat/event/lua/screenshot)
+│       ├── Screenshot.kt       # แคปหน้าจอ → ย่อ → JPEG (root screencap)
 │       └── Prefs.kt            # EncryptedSharedPreferences
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
 └── skeleton/
@@ -203,7 +209,7 @@ rejoin-cloud/
     │   └── agent.py              # orchestrator
     ├── tests/
     │   ├── test_watchdog.py      # 17 tests (fake clock)
-    │   └── test_backend.py       # 7 tests (SQLite + fakeredis)
+    │   └── test_backend.py       # 12 tests (SQLite + fakeredis; รวม screenshot + retention)
     └── backend/                  # ★ backend จริง (Phase 1)
         ├── app.py                # FastAPI + lifespan + แดชบอร์ด
         ├── config.py             # อ่าน env
@@ -211,6 +217,7 @@ rejoin-cloud/
         ├── security.py           # Argon2 + lookup sha256
         ├── redis_store.py        # last_seen TTL + คิวคำสั่ง
         ├── serializers.py        # view + status (dead-man's switch)
+        ├── screenshots.py        # เก็บ/ลบไฟล์ภาพ + retention ★ (ใหม่)
         ├── routers/              # auth / me / agent / device
         └── templates/            # login.html + dashboard.html
 ```
@@ -241,6 +248,16 @@ curl -X POST http://127.0.0.1:8000/api/device/1/arm
 curl -b cookies.txt http://127.0.0.1:8000/api/me/devices
 ```
 > รอเกมโหลดได้ถึง 3 นาที (เน็ตช้า) — อย่าใจร้อน
+
+### ทดสอบแคปหน้าจอ
+```bash
+# สั่งแคปทันที (เหมือนกดปุ่ม 📷 บนแดชบอร์ด)
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/device/1/screenshot
+# รอ APK อัป (2-5 วิ) แล้วดูรายการภาพ
+curl -b cookies.txt http://127.0.0.1:8000/api/me/screenshots
+# ภาพเสิร์ฟที่ http://127.0.0.1:8000/screenshots/<name>
+```
+> Python agent เปิดแคปเป็นรอบได้ด้วย `--screenshot-interval 300` (0 = ปิด; ยังสั่งจากเว็บได้เสมอ)
 
 ---
 

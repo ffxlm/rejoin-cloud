@@ -29,6 +29,8 @@ from ..schemas import CommandOut
 
 router = APIRouter()
 
+VALID_COMMANDS = {"arm", "disarm", "rejoin_now", "screenshot_now", "stop", "update_lua"}
+
 
 async def _queue_command(
     db: AsyncSession, store: Store, device: Device, command: str
@@ -76,6 +78,19 @@ async def rejoin_now(
     device = await resolve_owned_device(db, user, device_id)
     await _queue_command(db, store, device, "rejoin_now")
     return {"ok": True, "queued": "rejoin_now"}
+
+
+@router.post("/api/device/{device_id}/screenshot")
+async def screenshot_now(
+    device_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    store: Store = Depends(get_store),
+):
+    """สั่ง APK แคปหน้าจอทันที (ภาพจะโผล่ในแดชบอร์ดหลัง APK อัปเสร็จ)"""
+    device = await resolve_owned_device(db, user, device_id)
+    await _queue_command(db, store, device, "screenshot_now")
+    return {"ok": True, "queued": "screenshot_now"}
 
 
 @router.get("/api/device/command", response_model=CommandOut)

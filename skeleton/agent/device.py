@@ -7,10 +7,12 @@ device.py — การกระทำกับเครื่อง (ผ่า�
   - เปิดเกม (deep link เข้าแมพ)
   - ยัด Lua (atomic + backup)
   - อ่าน lua_state.json
+  - แคปหน้าจอ (screencap -p)
 """
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from typing import Optional
 
@@ -77,3 +79,16 @@ class Device:
             root=True,
         )
         return True
+
+    # ---------- แคปหน้าจอ ----------
+    def capture_screenshot(self, local_path: str, timeout: int = 25) -> bool:
+        """แคปหน้าจอผ่าน adb (screencap -p) → เขียนเป็น PNG ลง local_path"""
+        try:
+            with open(local_path, "wb") as f:
+                p = subprocess.run(
+                    [self.adb, "-s", self.serial, "exec-out", "screencap", "-p"],
+                    stdout=f, stderr=subprocess.DEVNULL, timeout=timeout,
+                )
+            return p.returncode == 0 and os.path.getsize(local_path) > 0
+        except Exception:
+            return False

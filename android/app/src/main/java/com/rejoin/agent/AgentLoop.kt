@@ -15,7 +15,8 @@ import org.json.JSONObject
  *   2) ป้อน watchdog → ได้ action
  *   3) ทำ action (REJOIN / LAUNCH / ALERT)
  *   4) ส่ง heartbeat + event ไปเว็บ
- *   5) รับคำสั่ง arm/disarm/rejoin_now จาก response
+ *   5) รับคำสั่ง arm/disarm/rejoin_now/screenshot_now จาก response
+ *   6) แคปหน้าจอ (ตามคำสั่ง / ตอน alert / เป็นรอบ) แล้วอัปขึ้นเว็บ
  */
 class AgentLoop(
     private val context: Context,
@@ -31,6 +32,9 @@ class AgentLoop(
         )
     )
     private val sessionStart = System.currentTimeMillis() / 1000
+
+    @Volatile
+    private var lastShotAt = 0L
 
     suspend fun run() {
         // ---- 1) ลงทะเบียน ----
@@ -82,6 +86,14 @@ class AgentLoop(
             val cmd = api.heartbeat(watchdog, obs, sessionStart, state)
             handleCommand(cmd)
 
+            // แคปเป็นรอบขณะ arm (ถ้าตั้ง interval > 0)
+            val shotInterval = prefs.screenshotIntervalSec
+            if (watchdog.armed && shotInterval > 0 &&
+                nowSec().toLong() - lastShotAt >= shotInterval
+            ) {
+                captureAndUpload()
+            }
+
             AgentState.setStatus(
                 "${watchdog.phase.value} | game=${if (gameRunning) "on" else "off"} | " +
                     "lua_age=${age?.toString() ?: "-"}s | rejoin=${watchdog.rejoinCount}" +
@@ -107,6 +119,8 @@ class AgentLoop(
             Action.ALERT -> {
                 AgentState.log("!!! ALERT: กู้ไม่ได้ ต้องให้คนดู")
                 api.sendEvent("alert", JSONObject().put("attempts", watchdog.attempts))
+                // แคปหลักฐานตอน alert
+                captureAndUpload()
             }
             Action.NONE -> {}
         }
@@ -130,6 +144,24 @@ class AgentLoop(
                 root.launch(prefs.placeId)
                 api.sendEvent("rejoin", JSONObject().put("action", "manual"))
             }
+            "screenshot_now" -> {
+                AgentState.log("แคปภาพตามคำสั่งเว็บ")
+                captureAndUpload()
+            }
+        }
+    }
+
+    private fun captureAndUpload() {
+        val jpeg = Screenshot.captureJpeg(context, root)
+        if (jpeg == null) {
+            AgentState.log("แคปภาพไม่สำเร็จ")
+            return
+        }
+        if (api.uploadScreenshot(jpeg)) {
+            AgentState.log("อัปโหลดภาพหน้าจอแล้ว (${jpeg.size / 1024} KB)")
+            lastShotAt = nowSec().toLong()
+        } else {
+            AgentState.log("อัปโหลดภาพไม่สำเร็จ")
         }
     }
 

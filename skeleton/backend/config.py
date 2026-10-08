@@ -66,6 +66,8 @@ class Settings:
     lua_dir: str = "skeleton/lua"
     apk_path: str = ""  # ว่าง = ยังไม่มี APK
     screenshot_dir: str = "screenshots"
+    screenshot_retention_days: int = 7      # ลบภาพเก่ากว่านี้ (ไฟล์ + DB)
+    screenshot_max_bytes: int = 5 * 1024 * 1024  # กันอัปไฟล์ใหญ่เกิน
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -86,6 +88,12 @@ class Settings:
             lua_dir=os.getenv("LUA_DIR", cls.lua_dir),
             apk_path=os.getenv("APK_PATH", cls.apk_path),
             screenshot_dir=os.getenv("SCREENSHOT_DIR", cls.screenshot_dir),
+            screenshot_retention_days=_env_int(
+                "SCREENSHOT_RETENTION_DAYS", cls.screenshot_retention_days
+            ),
+            screenshot_max_bytes=_env_int(
+                "SCREENSHOT_MAX_BYTES", cls.screenshot_max_bytes
+            ),
         )
 
     @property

@@ -28,12 +28,13 @@ from starlette.middleware.sessions import SessionMiddleware
 from .config import Settings
 from .db import Base, build_engine, build_sessionmaker
 from .deps import get_db, get_store
-from .models import Device, Event, User
+from .models import Device, Event, Screenshot, User
 from .redis_store import Store, build_store
 from .routers import agent as agent_router
 from .routers import auth as auth_router
 from .routers import device as device_router
 from .routers import me as me_router
+from .screenshots import cleanup_old_screenshots
 from .serializers import build_device_view, user_public
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -52,6 +53,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.engine = engine
         app.state.sessionmaker = build_sessionmaker(engine)
         app.state.store = build_store(settings.redis_url, settings.last_seen_ttl_sec)
+        # ลบภาพหน้าจอที่เก่ากว่า retention ตอนเริ่มระบบ
+        try:
+            async with app.state.sessionmaker() as session:
+                await cleanup_old_screenshots(session, settings)
+        except Exception:
+            pass
         try:
             yield
         finally:
@@ -135,6 +142,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         ).scalars().all() if devices else []
 
+        shots = (
+            await db.execute(
+                select(Screenshot)
+                .where(Screenshot.device_id.in_([d.id for d in devices]) if devices else False)
+                .order_by(Screenshot.ts.desc())
+                .limit(12)
+            )
+        ).scalars().all() if devices else []
+
         # ---- สรุปภาพรวม (ภาษาคน) ----
         import time as _time
         now = int(_time.time())
@@ -165,6 +181,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             for e in events
         ]
 
+        shot_views = [
+            {
+                "id": s.id,
+                "url": s.url,
+                "device_id": str(s.device_id),
+                "device_name": name_by_id.get(s.device_id, f"เครื่อง {s.device_id}"),
+                "ts": int(s.ts.timestamp()),
+                "ago": _ago(int(s.ts.timestamp())),
+            }
+            for s in shots
+        ]
+
         return templates.TemplateResponse(
             request,
             "dashboard.html",
@@ -172,6 +200,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "user": user_public(user),
                 "devices": views,
                 "events": event_views,
+                "screenshots": shot_views,
                 "armed_count": armed_count,
                 "problem_count": problem_count,
                 "total_rejoins": total_rejoins,

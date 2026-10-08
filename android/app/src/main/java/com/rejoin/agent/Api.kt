@@ -1,6 +1,7 @@
 package com.rejoin.agent
 
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -113,6 +114,31 @@ class Api(private val prefs: Prefs) {
             client.newCall(req).execute().close()
         } catch (e: Exception) {
             // เงียบ — event ไม่สำคัญพอจะทำให้ loop ล้ม
+        }
+    }
+
+    fun uploadScreenshot(jpeg: ByteArray): Boolean {
+        val tok = token ?: return false
+        val body = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                "file", "screenshot.jpg",
+                jpeg.toRequestBody("image/jpeg".toMediaType()),
+            )
+            .build()
+        val req = Request.Builder()
+            .url("${base()}/api/agent/screenshot")
+            .header("Authorization", "Bearer $tok")
+            .post(body)
+            .build()
+        return try {
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) AgentState.log("screenshot HTTP ${resp.code}")
+                resp.isSuccessful
+            }
+        } catch (e: Exception) {
+            AgentState.log("screenshot error: ${e.javaClass.simpleName}: ${e.message}")
+            false
         }
     }
 

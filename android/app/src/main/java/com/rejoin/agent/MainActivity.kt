@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
         binding.inputCode.setText(prefs.deviceCode)
         binding.inputServer.setText(prefs.serverUrl)
         binding.inputPlace.setText(prefs.placeId.toString())
+        binding.inputShot.setText(prefs.screenshotIntervalSec.toString())
 
         binding.btnStart.setOnClickListener { startWatching() }
         binding.btnStop.setOnClickListener { stopWatching() }
@@ -55,6 +56,8 @@ class MainActivity : AppCompatActivity() {
         prefs.deviceCode = code
         prefs.serverUrl = server
         prefs.placeId = place
+        prefs.screenshotIntervalSec =
+            binding.inputShot.text.toString().trim().toIntOrNull()?.coerceAtLeast(0) ?: 0
 
         ContextCompat.startForegroundService(this, Intent(this, RejoinService::class.java))
     }
