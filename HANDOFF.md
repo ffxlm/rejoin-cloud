@@ -1,7 +1,7 @@
 # HANDOFF — งานต่อไปสำหรับคนที่มารับช่วง
 
 > อัปเดตล่าสุด: 2026-10-09 (เอาระบบแคปภาพหน้าจอออกทั้งวงจร)
-> อ่านคู่กับ: `PLAN.md` (ดีไซน์), `CONTRACT.md` (สัญญา/DB), `PHASE0_RESULTS.md` (ผลเทสต์)
+> อ่านคู่กับ: `PLAN.md` (ดีไซน์), `CONTRACT.md` (สัญญา/DB)
 
 ---
 
@@ -178,8 +178,6 @@ rejoin-cloud/
 ├── PLAN.md               # ดีไซน์หลัก (อัปเดตตาม Phase 0 แล้ว)
 ├── CONTRACT.md           # สัญญา Lua/APK/เว็บ + DB schema  ★อ่านก่อนโค้ด
 ├── HANDOFF.md            # ← ไฟล์นี้
-├── PHASE0_CHECKLIST.md   # checklist เทสต์ Phase 0
-├── PHASE0_RESULTS.md     # ผลเทสต์ Phase 0
 ├── requirements.txt      # dependency ของ backend
 ├── .env.example          # ตัวอย่าง env (Postgres/Redis/Discord)
 ├── docker-compose.yml    # pg + redis (dev infra)
@@ -202,7 +200,6 @@ rejoin-cloud/
 │       └── Prefs.kt            # EncryptedSharedPreferences
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
 └── skeleton/
-    ├── README.md         # วิธีรัน skeleton
     ├── lua/rejoin_agent.lua      # Lua เขียน state (autoexec)
     ├── agent/
     │   ├── watchdog.py           # ★ state machine (พอร์ตเป็น Kotlin ทีหลัง)

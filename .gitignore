@@ -14,8 +14,13 @@ rejoin.db
 
 # ---- ไฟล์ชั่วคราว/หลักฐานขนาดใหญ่ ----
 phase0/artifacts/
+phase0_ui_dump.xml
 *.png
 *.apk
+
+# ---- ผลลัพธ์ build ----
+dist/
+build/
 
 # ---- OS/editor ----
 .DS_Store

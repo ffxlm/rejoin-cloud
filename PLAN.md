@@ -5,7 +5,7 @@
 
 > **สถานะ: Phase 0 เสร็จแล้ว** — สมมติฐานหลักผ่านครบ แต่มี **1 การเปลี่ยนสถาปัตยกรรม**:
 > ช่องทาง Lua → APK เปลี่ยนจาก *localhost HTTP* เป็น **file-based IPC**
-> เพราะ Delta บล็อกการยิง loopback/LAN (รายละเอียดข้อ 4.1 และ `PHASE0_RESULTS.md`)
+> เพราะ Delta บล็อกการยิง loopback/LAN (รายละเอียดข้อ 4.1)
 
 ---
 
@@ -338,7 +338,7 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 - [x] ยืนยันช่องทาง Lua → APK → **เปลี่ยนเป็น file-based IPC** (localhost HTTP ถูกบล็อก)
 - [x] ยืนยัน `writefile`/`readfile` ได้ แต่ **ต้องใช้ relative path**
 
-> รายละเอียดผลเทสต์ทั้งหมด: `PHASE0_RESULTS.md`, checklist: `PHASE0_CHECKLIST.md`
+> ผลเทสต์ Phase 0 สรุปไว้ที่ข้อ 17 ด้านล่าง
 
 ### เฟส 1 — MVP (เฟสเดียว)
 - [ ] Backend: Discord login, เพิ่มเครื่อง, ออก/เก็บรหัสเครื่อง (hash)
@@ -384,7 +384,7 @@ Realtime: อัปเดตสถานะสดด้วย WebSocket
 
 ---
 
-## 17. ผลเทสต์ Phase 0 (สรุป — รายละเอียดใน `PHASE0_RESULTS.md`)
+## 17. ผลเทสต์ Phase 0 (สรุป)
 
 ### เครื่องทดสอบ
 | รายการ | ค่า |
