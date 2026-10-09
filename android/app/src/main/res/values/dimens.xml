@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding">16dp</dimen>
+    <dimen name="card_radius">16dp</dimen>
+    <dimen name="row_padding_h">16dp</dimen>
+    <dimen name="row_padding_v">12dp</dimen>
+    <dimen name="section_gap">22dp</dimen>
+</resources>

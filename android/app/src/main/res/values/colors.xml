@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- iOS dark palette -->
+    <color name="ios_bg">#000000</color>
+    <color name="ios_card">#1C1C1E</color>
+    <color name="ios_card_alt">#2C2C2E</color>
+    <color name="ios_hairline">#38383A</color>
+
+    <color name="ios_blue">#0A84FF</color>
+    <color name="ios_green">#30D158</color>
+    <color name="ios_red">#FF453A</color>
+
+    <color name="ios_label">#FFFFFF</color>
+    <color name="ios_secondary_label">#8E8E93</color>
+    <color name="ios_tertiary_label">#48484A</color>
+
+    <color name="ios_switch_track_off">#39393D</color>
+    <color name="ios_switch_thumb">#FFFFFF</color>
+
+    <color name="ios_log_text">#7EE787</color>
+</resources>

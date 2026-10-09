@@ -16,12 +16,16 @@ import com.rejoin.agent.databinding.ActivityMainBinding
 import kotlinx.coroutines.launch
 
 /**
- * MainActivity — หน้าจอตั้งค่า: กรอกรหัสเครื่อง + เซิร์ฟเวอร์ + placeId แล้วกดเริ่ม/หยุดเฝ้า
+ * MainActivity — หน้าจอตั้งค่าแบบ iOS (dark):
+ * กรอกรหัสเครื่อง + เซิร์ฟเวอร์ + placeId แล้วสลับ Switch "เฝ้าเกม" เพื่อเริ่ม/หยุด
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var prefs: Prefs
+
+    /** กันไม่ให้ listener ยิงซ้ำตอนเราสั่ง setChecked() เอง (เช่น revert หรือ sync สถานะ) */
+    private var suppressSwitch = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,11 +37,26 @@ class MainActivity : AppCompatActivity() {
         binding.inputServer.setText(prefs.serverUrl)
         binding.inputPlace.setText(prefs.placeId.toString())
 
-        binding.btnStart.setOnClickListener { startWatching() }
-        binding.btnStop.setOnClickListener { stopWatching() }
+        binding.switchWatch.setOnCheckedChangeListener { _, checked ->
+            if (suppressSwitch) return@setOnCheckedChangeListener
+            if (checked) startWatching() else stopWatching()
+        }
 
         observeState()
         requestNotificationPermission()
+
+        // กลับเข้าหน้าใหม่ตอน service ยังรันอยู่ → switch ต้องติด
+        val running = AgentState.status.value.let {
+            it != getString(R.string.status_idle) && !it.startsWith("หยุด")
+        }
+        setSwitchSilently(running)
+    }
+
+    /** ตั้งค่า switch โดยไม่กระตุ้น listener */
+    private fun setSwitchSilently(checked: Boolean) {
+        suppressSwitch = true
+        binding.switchWatch.isChecked = checked
+        suppressSwitch = false
     }
 
     private fun startWatching() {
@@ -46,10 +65,12 @@ class MainActivity : AppCompatActivity() {
         val place = binding.inputPlace.text.toString().trim().toLongOrNull()
         if (code.isEmpty()) {
             Toast.makeText(this, "กรอกรหัสเครื่องก่อน (RJ-XXXXX-XXXXX)", Toast.LENGTH_SHORT).show()
+            setSwitchSilently(false)
             return
         }
         if (place == null) {
             Toast.makeText(this, "placeId ต้องเป็นตัวเลข", Toast.LENGTH_SHORT).show()
+            setSwitchSilently(false)
             return
         }
         prefs.deviceCode = code
@@ -68,7 +89,11 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    AgentState.status.collect { binding.txtStatus.text = it }
+                    AgentState.status.collect { status ->
+                        binding.txtStatus.text = status
+                        // service หยุดเอง/ผิดพลาด → ดัน switch กลับ off
+                        if (status.startsWith("หยุด")) setSwitchSilently(false)
+                    }
                 }
                 launch {
                     AgentState.logs.collect { list ->

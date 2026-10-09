@@ -1,3 +1,86 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.RejoinAgent" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <style name="Theme.RejoinAgent" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- iOS dark: พื้นดำ, การ์ด #1C1C1E, tint ฟ้า -->
+        <item name="colorPrimary">@color/ios_blue</item>
+        <item name="colorOnPrimary">@color/ios_label</item>
+        <item name="colorSecondary">@color/ios_green</item>
+        <item name="colorSurface">@color/ios_card</item>
+        <item name="colorOnSurface">@color/ios_label</item>
+        <item name="colorSurfaceVariant">@color/ios_card_alt</item>
+        <item name="colorOnSurfaceVariant">@color/ios_secondary_label</item>
+        <item name="android:colorBackground">@color/ios_bg</item>
+        <item name="colorOutline">@color/ios_hairline</item>
+        <item name="colorError">@color/ios_red</item>
+
+        <item name="android:statusBarColor">@color/ios_bg</item>
+        <item name="android:navigationBarColor">@color/ios_bg</item>
+        <item name="android:windowBackground">@color/ios_bg</item>
+        <item name="android:textColorPrimary">@color/ios_label</item>
+        <item name="android:textColorSecondary">@color/ios_secondary_label</item>
+        <item name="android:textColorHint">@color/ios_secondary_label</item>
+
+        <!-- iOS ใช้ฟอนต์เดียวหนา ๆ
+             ใช้ system (Roboto) ไปก่อน — ถ้าจะเปลี่ยนเป็น Inter:
+             วาง inter_*.ttf ใน res/font/ แล้วเปลี่ยนค่าข้างล่างเป็น @font/inter -->
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+    <!-- หัวข้อกลุ่ม (เช่น "การตั้งค่าเครื่อง") -->
+    <style name="SectionHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:textColor">@color/ios_secondary_label</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">0.03</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- แถวในการ์ดแบบ inset list -->
+    <style name="GroupRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:paddingStart">@dimen/row_padding_h</item>
+        <item name="android:paddingEnd">@dimen/row_padding_h</item>
+        <item name="android:paddingTop">@dimen/row_padding_v</item>
+        <item name="android:paddingBottom">@dimen/row_padding_v</item>
+    </style>
+
+    <!-- ป้ายชื่อในแถว -->
+    <style name="RowLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- เส้นคั่น hairline -->
+    <style name="RowDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginStart">@dimen/row_padding_h</item>
+        <item name="android:background">@color/ios_hairline</item>
+    </style>
+
+    <!-- ช่องกรอกแบบ iOS: ไม่มีกรอบ พื้นเรียบ -->
+    <style name="Widget.Rejoin.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:background">@null</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textColorHint">@color/ios_secondary_label</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:imeOptions">actionDone</item>
+    </style>
+
 </resources>

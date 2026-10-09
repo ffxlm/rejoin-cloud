@@ -1,79 +1,192 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:background="@color/ios_bg"
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/title"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:paddingBottom="16dp" />
-
-    <EditText
-        android:id="@+id/inputCode"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/hint_code"
-        android:inputType="text" />
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding"
+        android:paddingTop="28dp"
+        android:paddingBottom="32dp">
 
-    <EditText
-        android:id="@+id/inputServer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/hint_server"
-        android:inputType="textUri" />
-
-    <EditText
-        android:id="@+id/inputPlace"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/hint_place"
-        android:inputType="number" />
-
-    <Button
-        android:id="@+id/btnStart"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/btn_start" />
-
-    <Button
-        android:id="@+id/btnStop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="@string/btn_stop" />
-
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/status_idle"
-        android:textSize="15sp"
-        android:textStyle="bold" />
-
-    <ScrollView
-        android:id="@+id/scrollLog"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        android:background="#111827"
-        android:padding="8dp">
-
+        <!-- Large Title แบบ iOS -->
         <TextView
-            android:id="@+id/txtLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textColor="#86efac"
-            android:textSize="11sp"
-            android:textIsSelectable="true" />
-    </ScrollView>
+            android:text="@string/title"
+            android:textColor="@color/ios_label"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            android:letterSpacing="-0.02" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/subtitle"
+            android:textColor="@color/ios_secondary_label"
+            android:textSize="15sp" />
+
+        <!-- ===== การตั้งค่าเครื่อง ===== -->
+        <TextView
+            style="@style/SectionHeader"
+            android:layout_marginTop="@dimen/section_gap"
+            android:text="@string/section_device" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_card"
+            android:clipToOutline="true"
+            android:orientation="vertical">
+
+            <LinearLayout
+                style="@style/GroupRow">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/label_code" />
+
+                <EditText
+                    android:id="@+id/inputCode"
+                    style="@style/Widget.Rejoin.EditText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:hint="@string/hint_code"
+                    android:inputType="text" />
+            </LinearLayout>
+
+            <View style="@style/RowDivider" />
+
+            <LinearLayout
+                style="@style/GroupRow">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/label_server" />
+
+                <EditText
+                    android:id="@+id/inputServer"
+                    style="@style/Widget.Rejoin.EditText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:hint="@string/hint_server"
+                    android:inputType="textUri" />
+            </LinearLayout>
+
+            <View style="@style/RowDivider" />
+
+            <LinearLayout
+                style="@style/GroupRow">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/label_place" />
+
+                <EditText
+                    android:id="@+id/inputPlace"
+                    style="@style/Widget.Rejoin.EditText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:hint="@string/hint_place"
+                    android:inputType="number" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===== สถานะ ===== -->
+        <TextView
+            style="@style/SectionHeader"
+            android:layout_marginTop="@dimen/section_gap"
+            android:text="@string/section_status" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_card"
+            android:clipToOutline="true"
+            android:orientation="vertical">
+
+            <LinearLayout
+                style="@style/GroupRow">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:layout_weight="1"
+                    android:text="@string/section_status" />
+
+                <TextView
+                    android:id="@+id/txtStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:maxLines="2"
+                    android:text="@string/status_idle"
+                    android:textColor="@color/ios_secondary_label"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <View style="@style/RowDivider" />
+
+            <LinearLayout
+                style="@style/GroupRow">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:layout_weight="1"
+                    android:text="@string/label_watch" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchWatch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:thumbTint="@color/switch_thumb_tint"
+                    app:trackTint="@color/switch_track_tint" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===== บันทึกการทำงาน ===== -->
+        <TextView
+            style="@style/SectionHeader"
+            android:layout_marginTop="@dimen/section_gap"
+            android:text="@string/section_log" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_log"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <ScrollView
+                android:id="@+id/scrollLog"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:scrollbarStyle="insideOverlay">
+
+                <TextView
+                    android:id="@+id/txtLog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/ios_log_text"
+                    android:textIsSelectable="true"
+                    android:textSize="12sp" />
+            </ScrollView>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

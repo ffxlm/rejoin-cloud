@@ -1,9 +1,21 @@
 <resources>
     <string name="app_name">Rejoin Agent</string>
-    <string name="title">Auto-Rejoin Agent</string>
-    <string name="hint_code">รหัสเครื่อง (RJ-XXXXX-XXXXX)</string>
-    <string name="hint_server">เซิร์ฟเวอร์ (http://…)</string>
-    <string name="hint_place">placeId (เช่น 107778070777162)</string>
+    <string name="title">Auto-Rejoin</string>
+    <string name="subtitle">เฝ้าเกมและรีเข้าใหม่อัตโนมัติ</string>
+
+    <string name="section_device">การตั้งค่าเครื่อง</string>
+    <string name="section_status">สถานะ</string>
+    <string name="section_log">บันทึกการทำงาน</string>
+
+    <string name="label_code">รหัสเครื่อง</string>
+    <string name="label_server">เซิร์ฟเวอร์</string>
+    <string name="label_place">Place ID</string>
+    <string name="label_watch">เฝ้าเกม</string>
+
+    <string name="hint_code">RJ-XXXXX-XXXXX</string>
+    <string name="hint_server">http://…</string>
+    <string name="hint_place">เช่น 107778070777162</string>
+
     <string name="btn_start">เริ่มเฝ้า (arm)</string>
     <string name="btn_stop">หยุดเฝ้า (disarm)</string>
     <string name="status_idle">ยังไม่ทำงาน</string>
