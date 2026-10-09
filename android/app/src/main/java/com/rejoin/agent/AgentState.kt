@@ -41,6 +41,10 @@ object AgentState {
         status.value = AgentStatus(text, level, running)
     }
 
+    fun setStatus(s: AgentStatus) {
+        status.value = s
+    }
+
     fun log(line: String) {
         val ts = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
         logs.value = (logs.value + "[$ts] $line").takeLast(MAX_LOGS)
