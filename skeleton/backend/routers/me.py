@@ -146,7 +146,8 @@ async def download_lua(settings: Settings = Depends(get_settings)):
 
 @router.get("/api/download/apk")
 async def download_apk(settings: Settings = Depends(get_settings)):
-    if not settings.apk_path or not os.path.isfile(settings.apk_path):
+    path = settings.resolve_apk_path()
+    if not path:
         raise HTTPException(status_code=404, detail="ยังไม่มี APK")
-    return FileResponse(settings.apk_path, media_type="application/vnd.android.package-archive",
-                        filename=os.path.basename(settings.apk_path))
+    return FileResponse(path, media_type="application/vnd.android.package-archive",
+                        filename=os.path.basename(path))

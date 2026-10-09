@@ -107,3 +107,12 @@ class Settings:
     @property
     def discord_enabled(self) -> bool:
         return bool(self.discord_client_id and self.discord_client_secret)
+
+    def resolve_apk_path(self) -> str | None:
+        """ที่อยู่ไฟล์ APK จริง — ใช้ APK_PATH ถ้าตั้งไว้ ไม่งั้นลองหาใน dist/*.apk"""
+        if self.apk_path and os.path.isfile(self.apk_path):
+            return self.apk_path
+        import glob
+
+        candidates = sorted(glob.glob(os.path.join("dist", "*.apk")))
+        return candidates[0] if candidates else None

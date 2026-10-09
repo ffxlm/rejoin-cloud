@@ -41,6 +41,16 @@ TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
+def _human_size(n: int) -> str:
+    """แปลงขนาดไฟล์เป็นข้อความอ่านง่าย เช่น 6.8 MB"""
+    size = float(n)
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
 
@@ -224,6 +234,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "user": user_public(user),
                 "active": "bypass",
                 "runner_url": settings.runner_url,
+            },
+        )
+
+    @app.get("/download", response_class=HTMLResponse)
+    async def download(request: Request, db: AsyncSession = Depends(get_db)):
+        user = await _current_user(request, db)
+        if user is None:
+            return _login_response(request)
+
+        apk = None
+        apk_path = settings.resolve_apk_path()
+        if apk_path:
+            apk = {
+                "name": os.path.basename(apk_path),
+                "size": _human_size(os.path.getsize(apk_path)),
+            }
+        lua_path = os.path.join(settings.lua_dir, "rejoin_agent.lua")
+        return templates.TemplateResponse(
+            request,
+            "download.html",
+            {
+                "user": user_public(user),
+                "active": "download",
+                "apk": apk,
+                "lua_ok": os.path.isfile(lua_path),
             },
         )
 
