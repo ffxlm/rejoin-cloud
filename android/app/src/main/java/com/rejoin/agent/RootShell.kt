@@ -39,6 +39,12 @@ class RootShell {
         return r.ok && r.out.trim().isNotEmpty()
     }
 
+    /** ตรวจว่า su ใช้งานได้จริง (ไม่ถูกปฏิเสธสิทธิ์) — ไว้แยกอาการ "ไม่มี root" ออกจาก error อื่น */
+    fun rootAvailable(): Boolean {
+        val r = run("id")
+        return r.ok && r.out.contains("uid=0")
+    }
+
     fun readLuaState(): LuaState? {
         val r = run("cat '$STATE_FILE'")
         if (!r.ok || r.out.isBlank()) return null
@@ -58,20 +64,51 @@ class RootShell {
         run("am start -a android.intent.action.VIEW -d 'roblox://placeId=$placeId' $GAME_PKG")
     }
 
-    /** ยัด Lua แบบ atomic + backup — รับ path ไฟล์ในเครื่อง (cache) */
-    fun pushLua(localPath: String): Boolean {
-        val cmd = buildString {
-            append("cp '$localPath' '$LUA_FILE.tmp'; ")
-            append("[ -f '$LUA_FILE' ] && cp '$LUA_FILE' '$LUA_FILE.bak'; ")
-            append("mv '$LUA_FILE.tmp' '$LUA_FILE' && chmod 664 '$LUA_FILE'")
+    /** ยัด Lua แบบ atomic + backup — รับ path ไฟล์ในเครื่อง (cache)
+     *
+     * ทนกว่าเดิม: หาโฟลเดอร์ Autoexecute จากหลาย path (ตัวพิมพ์/alias) แล้วสร้างให้ถ้าไม่มี
+     * คืน [Result] เพื่อให้ผู้เรียกรู้สาเหตุจริง (exit code + ข้อความ error ของ su/cp/mv)
+     */
+    fun pushLua(localPath: String): Result {
+        if (!rootAvailable()) {
+            return Result(-1, "ไม่มีสิทธิ์ root (su ถูกปฏิเสธ) — อนุญาต root ให้แอปใน Magisk")
         }
-        return run(cmd).ok
+        val dir = resolveAutoexecDir()
+            ?: return Result(
+                -1,
+                "ไม่พบโฟลเดอร์ Autoexecute และสร้างไม่ได้ (ลอง: ${AUTOEXEC_CANDIDATES.joinToString()})",
+            )
+        val dest = "$dir/$LUA_FILENAME"
+        val cmd = buildString {
+            append("cp '$localPath' '$dest.tmp'; ")
+            append("[ -f '$dest' ] && cp '$dest' '$dest.bak'; ")
+            append("mv '$dest.tmp' '$dest' && chmod 664 '$dest' && test -s '$dest'")
+        }
+        return run(cmd)
+    }
+
+    /** หาโฟลเดอร์ Autoexecute ที่มีอยู่จริง (ทนตัวพิมพ์) — ถ้าไม่มีเลยให้สร้างที่ path หลัก */
+    private fun resolveAutoexecDir(): String? {
+        for (dir in AUTOEXEC_CANDIDATES) {
+            if (run("test -d '$dir'").ok) return dir
+        }
+        val primary = AUTOEXEC_CANDIDATES.first()
+        return if (run("mkdir -p '$primary'").ok) primary else null
     }
 
     companion object {
         const val GAME_PKG = "com.roblox.client"
+        const val LUA_FILENAME = "rejoin_agent.lua"
         const val AUTOEXEC_DIR = "/storage/emulated/0/Delta/Autoexecute"
-        const val LUA_FILE = "$AUTOEXEC_DIR/rejoin_agent.lua"
+        const val LUA_FILE = "$AUTOEXEC_DIR/$LUA_FILENAME"
         const val STATE_FILE = "/storage/emulated/0/Delta/Workspace/lua_state.json"
+
+        /** path ที่เป็นไปได้ของ Autoexecute (Delta บางเวอร์ชันใช้ AutoExecute) */
+        val AUTOEXEC_CANDIDATES = listOf(
+            "/storage/emulated/0/Delta/Autoexecute",
+            "/storage/emulated/0/Delta/AutoExecute",
+            "/sdcard/Delta/Autoexecute",
+            "/sdcard/Delta/AutoExecute",
+        )
     }
 }

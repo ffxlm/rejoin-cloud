@@ -123,10 +123,14 @@ class Api(private val prefs: Prefs) {
             .build()
         return try {
             client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) return null
+                if (!resp.isSuccessful) {
+                    AgentState.log("downloadLua HTTP ${resp.code}")
+                    return null
+                }
                 resp.body?.bytes()
             }
         } catch (e: Exception) {
+            AgentState.log("downloadLua error: ${e.javaClass.simpleName}: ${e.message}")
             null
         }
     }

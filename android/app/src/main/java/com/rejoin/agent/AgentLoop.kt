@@ -35,6 +35,10 @@ class AgentLoop(
     /** phase ล่าสุดที่เขียน log ไปแล้ว — เขียนรายละเอียดเทคนิคเฉพาะตอนเปลี่ยน (กัน log ล้น) */
     private var lastPhase: Phase? = null
 
+    /** Lua ลง Autoexecute สำเร็จแล้วหรือยัง — ถ้ายัง ลองใหม่เรื่อยๆ */
+    private var luaReady = false
+    private var lastLuaTrySec = 0
+
     suspend fun run() {
         // ---- 1) ลงทะเบียน ----
         AgentState.setStatus("กำลังลงทะเบียน…", StatusLevel.INFO, running = true)
@@ -55,10 +59,13 @@ class AgentLoop(
 
         // ---- 2) ติดตั้ง Lua ลง Autoexecute ----
         AgentState.setStatus("กำลังติดตั้ง Lua…", StatusLevel.INFO, running = true)
-        if (luaInstaller.install()) {
-            AgentState.log("ติดตั้ง Lua → Delta/Autoexecute สำเร็จ")
+        val install = luaInstaller.install()
+        luaReady = install.ok
+        lastLuaTrySec = nowSec()
+        if (install.ok) {
+            AgentState.log("ติดตั้ง Lua → Delta/Autoexecute สำเร็จ (${install.detail})")
         } else {
-            AgentState.log("ติดตั้ง Lua ไม่สำเร็จ (จะลองใหม่ก่อนรีเกม)")
+            AgentState.log("ติดตั้ง Lua ไม่สำเร็จ: ${install.detail} — จะลองใหม่อีกเรื่อยๆ")
         }
 
         // เกมยังไม่รัน → ล้าง state เก่าที่ค้างจากรอบก่อน (กันข้อมูลผี: ชื่อ/แมพของ session เก่า)
@@ -95,6 +102,17 @@ class AgentLoop(
             val cmd = api.heartbeat(watchdog, obs, sessionStart, liveState)
             handleCommand(cmd)
 
+            // Lua ยังลงไม่สำเร็จ → ลองใหม่เรื่อยๆ (ทุก ~LUA_RETRY_SEC) จนกว่าจะได้
+            if (!luaReady && now - lastLuaTrySec >= LUA_RETRY_SEC) {
+                lastLuaTrySec = now
+                val retry = luaInstaller.install()
+                luaReady = retry.ok
+                AgentState.log(
+                    if (retry.ok) "ติดตั้ง Lua สำเร็จ (หลังลองใหม่)"
+                    else "ติดตั้ง Lua ยังไม่สำเร็จ: ${retry.detail}"
+                )
+            }
+
             AgentState.setStatus(phaseStatus(watchdog.phase))
 
             // รายละเอียดเทคนิค (phase/game/lua_age/rejoin) ย้ายไปอยู่ใน log แทนการ์ดสถานะ
@@ -117,7 +135,7 @@ class AgentLoop(
                 AgentState.log(">>> ACTION ${action.name}: รีเกม")
                 root.forceStop()
                 delay(2000)
-                luaInstaller.install() // กัน Lua หาย
+                reinstallLua("ก่อนรีเกม") // กัน Lua หาย
                 root.launch(prefs.placeId)
                 api.sendEvent(
                     "rejoin",
@@ -146,15 +164,27 @@ class AgentLoop(
                 AgentState.log("rejoin_now by web")
                 root.forceStop()
                 delay(2000)
-                luaInstaller.install()
+                reinstallLua("ก่อน rejoin_now")
                 root.launch(prefs.placeId)
                 api.sendEvent("rejoin", JSONObject().put("action", "manual"))
             }
         }
     }
 
+    /** ติดตั้ง Lua ใหม่ (ก่อนรีเกม) แล้วอัปเดตสถานะ + log ถ้าล้มเหลว */
+    private fun reinstallLua(whenLabel: String) {
+        val r = luaInstaller.install()
+        luaReady = r.ok
+        if (!r.ok) AgentState.log("ติดตั้ง Lua $whenLabel ไม่สำเร็จ: ${r.detail}")
+    }
+
     private fun androidId(): String? =
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
 
     private fun nowSec(): Int = (System.currentTimeMillis() / 1000).toInt()
+
+    companion object {
+        /** ระยะห่างขั้นต่ำระหว่างการลองติดตั้ง Lua ซ้ำ (วินาที) — กัน log/เน็ตถี่เกิน */
+        private const val LUA_RETRY_SEC = 60
+    }
 }

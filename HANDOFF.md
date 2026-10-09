@@ -97,6 +97,8 @@ python3 -m venv .venv
 - [x] เก็บ token เข้ารหัส — `Prefs` (EncryptedSharedPreferences/Keystore)
 - [x] ลงทะเบียนด้วยรหัสเครื่อง → ได้ device_token — `Api.register`
 - [x] ดึง Lua จากเว็บ (`GET /api/download/lua`) แล้วเขียนลง `Delta/Autoexecute` (atomic+backup) — `LuaInstaller`
+- [x] **ติดตั้ง Lua ทนขึ้น + log บอกสาเหตุ** — หา path `Autoexecute` หลายแบบ (ตัวพิมพ์/`/sdcard`) + สร้างถ้าไม่มี,
+      เช็คสิทธิ์ root ก่อน, retry ทุก 60 วิ จนสำเร็จ, log เหตุผลจริง (HTTP/exit code/ข้อความ error) — `LuaInstaller`/`RootShell`/`AgentLoop`/`Api`
 - [x] อ่าน `lua_state.json` → คำนวณความเงียบ — `RootShell` + `LuaState`
 - [x] watchdog state machine (พอร์ตจาก `watchdog.py`) — `Watchdog.kt` + 17 unit tests
 - [x] สั่งรีเกมผ่าน root (`su -c am force-stop / am start`) — `RootShell`
