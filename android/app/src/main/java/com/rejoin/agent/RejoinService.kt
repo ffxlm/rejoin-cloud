@@ -46,7 +46,7 @@ class RejoinService : Service() {
                     AgentLoop(applicationContext, prefs).run()
                 } catch (e: Exception) {
                     AgentState.log("loop หยุด: ${e.message}")
-                    AgentState.setStatus("หยุด (เกิดข้อผิดพลาด)")
+                    AgentState.setStatus("หยุด (เกิดข้อผิดพลาด)", StatusLevel.ERROR)
                 }
             }
         }

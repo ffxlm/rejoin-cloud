@@ -32,9 +32,12 @@ class AgentLoop(
     )
     private val sessionStart = System.currentTimeMillis() / 1000
 
+    /** phase ล่าสุดที่เขียน log ไปแล้ว — เขียนรายละเอียดเทคนิคเฉพาะตอนเปลี่ยน (กัน log ล้น) */
+    private var lastPhase: Phase? = null
+
     suspend fun run() {
         // ---- 1) ลงทะเบียน ----
-        AgentState.setStatus("กำลังลงทะเบียน…")
+        AgentState.setStatus("กำลังลงทะเบียน…", StatusLevel.INFO, running = true)
         val reg = api.register(androidId())
         if (reg != null) {
             api.token = reg.deviceToken
@@ -45,13 +48,13 @@ class AgentLoop(
             api.token = prefs.deviceToken
             AgentState.log("ใช้ token เดิม (ลงทะเบียนชั่วคราวไม่สำเร็จ)")
         } else {
-            AgentState.setStatus("ลงทะเบียนไม่สำเร็จ — ตรวจรหัสเครื่อง/เซิร์ฟเวอร์")
+            AgentState.setStatus("ลงทะเบียนไม่สำเร็จ", StatusLevel.ERROR)
             AgentState.log("ลงทะเบียนล้มเหลว: ${prefs.serverUrl}")
             return
         }
 
         // ---- 2) ติดตั้ง Lua ลง Autoexecute ----
-        AgentState.setStatus("กำลังติดตั้ง Lua…")
+        AgentState.setStatus("กำลังติดตั้ง Lua…", StatusLevel.INFO, running = true)
         if (luaInstaller.install()) {
             AgentState.log("ติดตั้ง Lua → Delta/Autoexecute สำเร็จ")
         } else {
@@ -92,11 +95,18 @@ class AgentLoop(
             val cmd = api.heartbeat(watchdog, obs, sessionStart, liveState)
             handleCommand(cmd)
 
-            AgentState.setStatus(
-                "${watchdog.phase.value} | game=${if (gameRunning) "on" else "off"} | " +
-                    "lua_age=${age?.toString() ?: "-"}s | rejoin=${watchdog.rejoinCount}" +
-                    (if (watchdog.armed) " | ARMED" else "")
-            )
+            AgentState.setStatus(phaseStatus(watchdog.phase))
+
+            // รายละเอียดเทคนิค (phase/game/lua_age/rejoin) ย้ายไปอยู่ใน log แทนการ์ดสถานะ
+            // เขียนเฉพาะตอน phase เปลี่ยน — ไม่งั้น log จะล้นทุก interval
+            if (watchdog.phase != lastPhase) {
+                lastPhase = watchdog.phase
+                AgentState.log(
+                    "สถานะ: ${watchdog.phase.value} | game=${if (gameRunning) "on" else "off"} | " +
+                        "lua_age=${age?.toString() ?: "-"}s | rejoin=${watchdog.rejoinCount}" +
+                        (if (watchdog.armed) " | ARMED" else "")
+                )
+            }
             delay(intervalMs)
         }
     }

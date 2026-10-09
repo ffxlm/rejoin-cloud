@@ -124,18 +124,33 @@
 
                 <TextView
                     style="@style/RowLabel"
-                    android:layout_weight="1"
                     android:text="@string/label_work" />
 
-                <TextView
-                    android:id="@+id/txtStatus"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:maxLines="2"
-                    android:text="@string/status_idle"
-                    android:textColor="@color/ios_secondary_label"
-                    android:textSize="15sp" />
+                    android:layout_weight="1"
+                    android:gravity="end|center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/statusDot"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_status_dot"
+                        android:backgroundTint="@color/ios_secondary_label" />
+
+                    <TextView
+                        android:id="@+id/txtStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:maxLines="2"
+                        android:text="@string/status_idle"
+                        android:textColor="@color/ios_secondary_label"
+                        android:textSize="15sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <View style="@style/RowDivider" />

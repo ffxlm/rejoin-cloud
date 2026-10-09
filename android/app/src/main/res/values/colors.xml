@@ -8,6 +8,7 @@
 
     <color name="ios_blue">#0A84FF</color>
     <color name="ios_green">#30D158</color>
+    <color name="ios_orange">#FF9F0A</color>
     <color name="ios_red">#FF453A</color>
 
     <color name="ios_label">#FFFFFF</color>

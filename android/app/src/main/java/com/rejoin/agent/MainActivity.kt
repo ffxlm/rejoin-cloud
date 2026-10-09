@@ -3,6 +3,7 @@ package com.rejoin.agent
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -46,10 +47,7 @@ class MainActivity : AppCompatActivity() {
         requestNotificationPermission()
 
         // กลับเข้าหน้าใหม่ตอน service ยังรันอยู่ → switch ต้องติด
-        val running = AgentState.status.value.let {
-            it != getString(R.string.status_idle) && !it.startsWith("หยุด")
-        }
-        setSwitchSilently(running)
+        setSwitchSilently(AgentState.status.value.running)
     }
 
     /** ตั้งค่า switch โดยไม่กระตุ้น listener */
@@ -82,18 +80,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopWatching() {
         stopService(Intent(this, RejoinService::class.java))
-        AgentState.setStatus(getString(R.string.status_stopped))
+        AgentState.setStatus(getString(R.string.status_stopped), StatusLevel.IDLE)
     }
 
     private fun observeState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    AgentState.status.collect { status ->
-                        binding.txtStatus.text = status
-                        // service หยุดเอง/ผิดพลาด → ดัน switch กลับ off
-                        if (status.startsWith("หยุด")) setSwitchSilently(false)
-                    }
+                    AgentState.status.collect { status -> renderStatus(status) }
                 }
                 launch {
                     AgentState.logs.collect { list ->
@@ -103,6 +97,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** วาดสถานะ: ข้อความภาษาคน + สีจุดบอกสถานะ (เขียว=ทำงาน, เหลือง=กำลังกู้, แดง=ผิดพลาด) */
+    private fun renderStatus(status: AgentStatus) {
+        binding.txtStatus.text = status.text
+        binding.statusDot.backgroundTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, levelColorRes(status.level)))
+        binding.txtStatus.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (status.level == StatusLevel.IDLE) R.color.ios_secondary_label else R.color.ios_label,
+            )
+        )
+        // service หยุดเอง/ผิดพลาด → ดัน switch กลับ off
+        if (!status.running) setSwitchSilently(false)
+    }
+
+    private fun levelColorRes(level: StatusLevel): Int = when (level) {
+        StatusLevel.IDLE -> R.color.ios_secondary_label
+        StatusLevel.INFO -> R.color.ios_blue
+        StatusLevel.ACTIVE -> R.color.ios_green
+        StatusLevel.WARN -> R.color.ios_orange
+        StatusLevel.ERROR -> R.color.ios_red
     }
 
     private fun requestNotificationPermission() {
