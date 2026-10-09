@@ -19,6 +19,7 @@
 - ✅ **APK ทำงานจริงแล้ว** — พอร์ต agent.py → Kotlin ครบ (register/Lua/watchdog/root rejoin)
   ทดสอบ end-to-end ผ่าน **public HTTPS** (ข้ามเน็ตจริง) สำเร็จ: arm → เปิดเกมเอง → armed
 - ✅ **Deploy stack** — Dockerfile + compose (app/pg/redis/Caddy HTTPS) + `DEPLOY.md` พร้อมขึ้น VPS
+- ✅ **กันแอปถูกฆ่าบนคลาวโฟน** — `no_frozen` (ColorOS freezer) + `KeepAlive` daemon (LMK) · เซ็น APK คีย์ถาวร
 - ❌ **เอาระบบแคปภาพหน้าจอ (screenshot) ออกทั้งวงจร** — APK/เว็บ/แดชบอร์ด/เอกสาร
 - ⏭️ เหลือ: deploy จริงบน VPS + Discord OAuth จริง + P2 ที่เหลือ (alert/WebSocket)
 
@@ -73,6 +74,11 @@ python3 -m venv .venv
 4. **Auto Execute ทำงานเอง** — วาง `rejoin_agent.lua` ใน `Delta/Autoexecute/` แล้วรันเอง (ไม่ต้องกด)
 5. **ตอนรีเกม Delta inject Lua เอง** — ไม่ต้องให้ APK trigger แยก
 6. **เน็ตคลาวโฟนช้ามาก** (ping 800–2000ms, เข้าเกม ~3 นาที) → timeout ต้องเผื่อเยอะ
+7. **คลาวโฟน RAM น้อยจะฆ่าแอปเอง 2 ชั้น** (เจอจริง realme RMX3201 / ColorOS 11 / 2.8GB):
+   - **FastFreezer (ColorOS/realme)** แช่แข็ง process แม้เป็น foreground service
+     → ต้องใส่ package เข้า `no_frozen` (secure settings) ผ่าน root
+   - **Low-Memory Killer** ฆ่าเพราะเกมกิน RAM ~1.7GB (zram 900MB ตึง)
+     → ต้องตรึง `oom_score_adj = -1000` ด้วย root daemon (ดู `KeepAlive.kt`)
 
 ---
 
@@ -173,6 +179,11 @@ python3 -m venv .venv
 | เน็ตช้า | อย่าตั้ง timeout สั้น — เกมโหลด 3 นาที |
 | `nc -l` บนเครื่อง | ใช้เป็น HTTP server ชั่วคราวได้ (toybox) แต่ไม่ต้องใช้แล้ว |
 | GUI ยืนยัน | `gethui()` + ScreenGui ตัวนับวิ่ง = วิธีเช็ค autoexec ที่ดี |
+| แอปถูกฆ่า (ColorOS) | ไม่ใช่แค่ LMK — `ColorHansManager` (FastFreezer) แช่แข็ง process ต้องใส่ `no_frozen` |
+| `ApplicationExitInfo` | ดูสาเหตุตายจริงได้: `adb shell dumpsys activity exit-info <pkg>` (reason=3 = LOW_MEMORY) |
+| ตั้ง `oom_score_adj` | root ตั้งให้ **ตัวเอง** ได้ แต่ข้าม process ต้อง `magiskpolicy --live 'allow magisk untrusted_app file write'` |
+| AMS รีเซ็ต adj | foreground service ถูก AMS ตั้ง adj=200 ทุกครั้งที่ state เปลี่ยน → ต้องตรึงซ้ำ (daemon 2 วิ) |
+| daemon detach | `setsid sh script &` แล้ว parent = init (รอดแม้แอปตาย) · อย่าใช้ `$!` (setsid fork → PID ไม่ตรง) ให้ script `echo $$` เอง |
 
 ---
 
@@ -200,7 +211,9 @@ rejoin-cloud/
 │       ├── RejoinService.kt    # Foreground Service → AgentLoop
 │       ├── AgentLoop.kt        # orchestrator (register→Lua→เฝ้า→รีเกม)
 │       ├── Watchdog.kt         # dead-man's switch (pure)
-│       ├── RootShell.kt        # su -c (pidof/force-stop/launch/push Lua)
+│       ├── RootShell.kt        # su -c (pidof/force-stop/launch/push Lua/no_frozen)
+│       ├── KeepAlive.kt        # ★ daemon กัน LMK ฆ่า (oom_score_adj -1000 + เปิด service กลับ)
+│       ├── BootReceiver.kt     # เปิด service กลับหลังรีบูต (ถ้าเคยกดเฝ้า)
 │       ├── Api.kt              # OkHttp (register/heartbeat/event/lua)
 │       └── Prefs.kt            # EncryptedSharedPreferences
 ├── phase0/               # สคริปต์ probe + listener (ของ Phase 0)
