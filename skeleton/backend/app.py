@@ -266,6 +266,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             apk = {
                 "name": os.path.basename(apk_path),
                 "size": _human_size(os.path.getsize(apk_path)),
+                "remote": False,
+            }
+        elif settings.apk_url:
+            # ไม่มีไฟล์ในเครื่อง (production) → ให้ดาวน์โหลดจาก GitHub Release
+            apk = {
+                "name": os.path.basename(settings.apk_url) or "rejoin-agent-debug.apk",
+                "size": None,
+                "remote": True,
             }
         lua_path = os.path.join(settings.lua_dir, "rejoin_agent.lua")
         return templates.TemplateResponse(

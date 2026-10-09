@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -146,8 +146,12 @@ async def download_lua(settings: Settings = Depends(get_settings)):
 
 @router.get("/api/download/apk")
 async def download_apk(settings: Settings = Depends(get_settings)):
+    # มีไฟล์ในเครื่อง (dev) → เสิร์ฟตรง ๆ
     path = settings.resolve_apk_path()
-    if not path:
-        raise HTTPException(status_code=404, detail="ยังไม่มี APK")
-    return FileResponse(path, media_type="application/vnd.android.package-archive",
-                        filename=os.path.basename(path))
+    if path:
+        return FileResponse(path, media_type="application/vnd.android.package-archive",
+                            filename=os.path.basename(path))
+    # ไม่มีไฟล์ในเครื่อง (production) → ไปดาวน์โหลดจาก GitHub Release แทน
+    if settings.apk_url:
+        return RedirectResponse(settings.apk_url, status_code=302)
+    raise HTTPException(status_code=404, detail="ยังไม่มี APK")

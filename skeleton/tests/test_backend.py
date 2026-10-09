@@ -186,6 +186,36 @@ class BackendTestCase(unittest.TestCase):
             self.assertEqual(d["character"], "ch")
             self.assertEqual(d["map"], "mp")
 
+    # ---------- ดาวน์โหลด APK ----------
+    def test_apk_download_serves_local_file(self) -> None:
+        with TestClient(self.app) as client:
+            self._login(client)
+            fd, apk = tempfile.mkstemp(suffix=".apk")
+            os.write(fd, b"fake-apk")
+            os.close(fd)
+            try:
+                with patch.object(Settings, "resolve_apk_path", return_value=apk):
+                    r = client.get("/api/download/apk", follow_redirects=False)
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(
+                    r.headers["content-type"], "application/vnd.android.package-archive"
+                )
+                self.assertEqual(r.content, b"fake-apk")
+            finally:
+                os.unlink(apk)
+
+    def test_apk_download_falls_back_to_release(self) -> None:
+        """ไม่มีไฟล์ในเครื่อง (production) → redirect ไป GitHub Release"""
+        with TestClient(self.app) as client:
+            self._login(client)
+            with patch.object(Settings, "resolve_apk_path", return_value=None):
+                r = client.get("/api/download/apk", follow_redirects=False)
+                self.assertEqual(r.status_code, 302)
+                self.assertIn("releases/download/apk-latest", r.headers["location"])
+                # หน้าดาวน์โหลดต้องโชว์ว่ามาจาก GitHub Release
+                html = client.get("/download").text
+                self.assertIn("GitHub Release", html)
+
     # ---------- retention ----------
 
 

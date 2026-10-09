@@ -68,6 +68,14 @@ curl https://rejoin.thirx.com/health
 ในแอป Rejoin Agent → ช่อง "เซิร์ฟเวอร์" ใส่ `https://rejoin.thirx.com`
 (ค่า default ในโค้ดควรแก้เป็นโดเมนคุณใน `Prefs.DEFAULT_SERVER`)
 
+### 7) APK ให้ดาวน์โหลดบนเว็บ (อัตโนมัติ)
+GitHub Actions จะ build APK และเผยแพร่ไป **GitHub Release** แท็ก `apk-latest` ทุกครั้งที่ push
+โค้ดใน `android/**` → เว็บ production ดาวน์โหลดผ่าน `APK_URL` (ค่า default ชี้ Release นี้แล้ว)
+
+- ลิงก์คงที่: `https://github.com/ffxlm/rejoin-cloud/releases/download/apk-latest/rejoin-agent-debug.apk`
+- ดู/แก้ได้ที่แท็บ **Actions** หรือหน้า **Releases** ของ repo
+- ถ้าอยากใช้ไฟล์ในเครื่องแทน (dev) → วาง APK ใน `dist/` แล้วเว็บจะเสิร์ฟไฟล์นั้นก่อน
+
 จากนี้ **คลาวโฟนที่ไหนก็ใช้ได้** — ไม่ต้อง adb/ไม่ต้อง LAN
 
 ---

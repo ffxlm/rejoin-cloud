@@ -79,7 +79,12 @@ class Settings:
 
     # ---- ที่เก็บไฟล์ให้ดาวน์โหลด ----
     lua_dir: str = "skeleton/lua"
-    apk_path: str = ""  # ว่าง = ยังไม่มี APK
+    apk_path: str = ""  # ว่าง = หาใน dist/*.apk อัตโนมัติ
+    # ลิงก์ดาวน์โหลด APK สำรอง (ใช้เมื่อไม่มีไฟล์ในเครื่อง เช่น บน production)
+    # ค่าเริ่มต้นชี้ไป GitHub Release "apk-latest" ที่ GitHub Actions อัปโหลดให้อัตโนมัติ
+    apk_url: str = (
+        "https://github.com/ffxlm/rejoin-cloud/releases/download/apk-latest/rejoin-agent-debug.apk"
+    )
 
     # ---- retention ของประวัติเหตุการณ์ (events) ----
     event_retention_days: int = 30     # ลบเหตุการณ์ที่เก่ากว่านี้
@@ -106,6 +111,7 @@ class Settings:
             runner_url=os.getenv("RUNNER_URL", cls.runner_url),
             lua_dir=os.getenv("LUA_DIR", cls.lua_dir),
             apk_path=os.getenv("APK_PATH", cls.apk_path),
+            apk_url=os.getenv("APK_URL", cls.apk_url),
             event_retention_days=_env_int(
                 "EVENT_RETENTION_DAYS", cls.event_retention_days
             ),

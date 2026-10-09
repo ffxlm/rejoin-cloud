@@ -15,6 +15,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # ให้สร้าง/อัปเดต GitHub Release ได้
     defaults:
       run:
         working-directory: android
@@ -52,3 +54,17 @@ jobs:
           name: rejoin-agent-debug
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # เผยแพร่ APK ไป GitHub Release (แท็ก apk-latest) เพื่อให้เว็บ production
+      # ดาวน์โหลดได้ผ่าน APK_URL — ลิงก์คงที่ทุกครั้งที่ build
+      - name: Publish APK to release (apk-latest)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk rejoin-agent-debug.apk
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest rejoin-agent-debug.apk \
+            --title "Rejoin Agent — APK ล่าสุด" \
+            --notes "สร้างอัตโนมัติจาก commit ${GITHUB_SHA::7} (${GITHUB_REF_NAME})" \
+            --latest
