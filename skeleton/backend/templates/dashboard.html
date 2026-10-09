@@ -203,11 +203,11 @@
         </div>
         <div class="mi">
           <div class="k"><svg class="ic"><use href="#i-user"/></svg>ตัวละคร</div>
-          <div class="v js-character">{{ d.character or '—' }}</div>
+          <div class="v js-character {{ 'stale' if d.data_stale else '' }}">{{ '—' if d.data_stale else (d.character or '—') }}</div>
         </div>
         <div class="mi">
           <div class="k"><svg class="ic"><use href="#i-map"/></svg>แมพ</div>
-          <div class="v js-map">{{ d.map or '—' }}</div>
+          <div class="v js-map {{ 'stale' if d.data_stale else '' }}">{{ '—' if d.data_stale else (d.map or '—') }}</div>
         </div>
         <div class="mi">
           <div class="k"><svg class="ic"><use href="#i-refresh"/></svg>กู้เกมแล้ว</div>
@@ -399,9 +399,10 @@ function relTime(sec){
 function text(el, v){ if (el) el.textContent = v; }
 function meta(el, v, stale){
   if (!el) return;
-  el.textContent = v || '—';
-  el.classList.toggle('stale', !!stale && !v);
-  el.title = (stale && !v) ? 'ยังไม่มีข้อมูลจริง (เกมปิด/ข้อมูลเก่า)' : '';
+  const show = stale ? null : v;   // ข้อมูลเก่า → ไม่โชว์ค่า (กันข้อมูลผี)
+  el.textContent = show || '—';
+  el.classList.toggle('stale', !!stale);
+  el.title = stale ? 'ยังไม่มีข้อมูลจริง (เกมปิด/ข้อมูลเก่า)' : '';
 }
 
 async function poll(){
