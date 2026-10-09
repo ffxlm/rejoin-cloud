@@ -322,7 +322,7 @@ function toggleNav(force){
   document.getElementById('navToggle').setAttribute('aria-expanded', String(open));
   document.body.style.overflow = open ? 'hidden' : '';
   sb.inert = !open && window.matchMedia('(max-width:820px)').matches;
-  if (open) sb.querySelector('a').focus();
+  if (open) (sb.querySelector('.nav-item.active') || sb.querySelector('a')).focus();
   else if (wasOpen) document.getElementById('navToggle').focus();
 }
 window.matchMedia('(min-width:821px)').addEventListener('change', () => toggleNav(false));
