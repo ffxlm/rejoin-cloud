@@ -85,6 +85,9 @@ class Settings:
     apk_url: str = (
         "https://github.com/ffxlm/rejoin-cloud/releases/download/apk-latest/rejoin-agent-debug.apk"
     )
+    # เวอร์ชัน APK ที่โชว์บนหน้า /download — ตั้งให้ตรงกับ versionName ใน
+    # android/app/build.gradle.kts ทุกครั้งที่อัป APK (env: APK_VERSION)
+    apk_version: str = "0.2.0"
 
     # ---- retention ของประวัติเหตุการณ์ (events) ----
     event_retention_days: int = 30     # ลบเหตุการณ์ที่เก่ากว่านี้
@@ -112,6 +115,7 @@ class Settings:
             lua_dir=os.getenv("LUA_DIR", cls.lua_dir),
             apk_path=os.getenv("APK_PATH", cls.apk_path),
             apk_url=os.getenv("APK_URL", cls.apk_url),
+            apk_version=os.getenv("APK_VERSION", cls.apk_version),
             event_retention_days=_env_int(
                 "EVENT_RETENTION_DAYS", cls.event_retention_days
             ),

@@ -283,6 +283,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "user": user_public(user),
                 "active": "download",
                 "apk": apk,
+                "apk_version": settings.apk_version,
                 "lua_ok": os.path.isfile(lua_path),
             },
         )

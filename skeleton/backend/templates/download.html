@@ -112,7 +112,7 @@
   <span class="dl-ic"><svg class="ic"><use href="#i-smartphone"/></svg></span>
   <div class="dl-meta">
     <b>{{ apk.name }}</b>
-    <div class="sub">เวอร์ชัน 0.1.0{% if apk.size %} · ขนาด {{ apk.size }}{% elif apk.remote %} · จาก GitHub Release{% endif %}</div>
+    <div class="sub">{% if apk_version %}เวอร์ชัน {{ apk_version }}{% endif %}{% if apk.size %} · ขนาด {{ apk.size }}{% elif apk.remote %} · จาก GitHub Release{% endif %}</div>
     <div class="chips">
       <span class="chip">Android 7.0+</span>
       <span class="chip">APK</span>

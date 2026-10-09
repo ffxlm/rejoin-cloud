@@ -74,9 +74,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
           cp app/build/outputs/apk/debug/app-debug.apk rejoin-agent-debug.apk
           gh release delete apk-latest --yes --cleanup-tag || true
           gh release create apk-latest rejoin-agent-debug.apk \
-            --title "Rejoin Agent — APK ล่าสุด" \
-            --notes "สร้างอัตโนมัติจาก commit ${GITHUB_SHA::7} (${GITHUB_REF_NAME})" \
+            --title "Rejoin Agent v${VERSION} — APK ล่าสุด" \
+            --notes "เวอร์ชัน ${VERSION} · สร้างอัตโนมัติจาก commit ${GITHUB_SHA::7} (${GITHUB_REF_NAME})" \
             --latest
