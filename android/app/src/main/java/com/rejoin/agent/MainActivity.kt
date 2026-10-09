@@ -87,6 +87,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopWatching() {
         prefs.watchEnabled = false
+        KeepAlive(this, RootShell()).stop()
         stopService(Intent(this, RejoinService::class.java))
         AgentState.setStatus(getString(R.string.status_stopped), StatusLevel.IDLE)
     }

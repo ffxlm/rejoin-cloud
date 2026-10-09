@@ -76,6 +76,13 @@ workflow จะถอด keystore ไปที่ `android/app/keystore/rejoin.j
 - **กัน ColorOS/realme FastFreezer** (เจอจริงบน realme RMX3201 / ColorOS 11):
   ใส่ package ตัวเองเข้า whitelist `no_frozen` (secure settings) อัตโนมัติผ่าน root
   → `RootShell.protectFromFreezer()` เรียกใน `AgentLoop.run()`
+- **กัน Low-Memory Killer (LMK)** — เมื่อเครื่อง RAM น้อย (realme 2.8GB, เกมกิน ~1.7GB):
+  foreground service (importance=125) ยังโดนฆ่า (`ApplicationExitInfo reason=3 LOW_MEMORY`)
+  → `KeepAlive` รัน shell daemon ผ่าน root (แยกจากแอป):
+  1. ตั้ง `oom_score_adj` ของตัวเอง = -1000 (root ตั้งให้ตัวเองได้)
+  2. ตรึง `oom_score_adj` ของแอป = -1000 ทุก 2 วิ (กัน AMS รีเซ็ตกลับเป็น 200)
+  3. ถ้าแอปตาย → `am start-foreground-service` เปิดกลับ
+  หยุดเองเมื่อผู้ใช้กด "หยุดเฝ้า" (ลบ marker `files/watch.enabled`)
 
 ### หลักฐานจากเครื่องจริง (realme RMX3201, ColorOS 11, RAM 2.8GB)
 - ตัวฆ่าไม่ใช่แค่ LMK แต่เป็น **`ColorHansManager` (FastFreezer) ของ realme**:

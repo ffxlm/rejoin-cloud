@@ -24,6 +24,7 @@ class AgentLoop(
     private val root = RootShell()
     private val api = Api(prefs)
     private val luaInstaller = LuaInstaller(context, api, root)
+    private val keepAlive = KeepAlive(context, root)
     private val watchdog = Watchdog(
         Config(
             silenceSec = prefs.silenceSec,
@@ -69,6 +70,9 @@ class AgentLoop(
         if (rootOk) {
             val w = root.protectFromFreezer(context.packageName)
             AgentState.log("กันแช่แข็งแอป (no_frozen): ${w.out.trim()}")
+            // กัน LMK ฆ่า (RAM น้อย): daemon ตรึง oom_score_adj + เปิด service กลับถ้าตาย
+            keepAlive.start()
+            AgentState.log("เปิดตัวกันถูกฆ่า (keep-alive daemon)")
         }
 
         // ---- 3) ติดตั้ง Lua ลง Autoexecute (เฉพาะเมื่อมีรูท) ----
@@ -151,6 +155,8 @@ class AgentLoop(
                         (if (watchdog.armed) " | ARMED" else "")
                 )
             }
+            // ตรึง adj ตัวเองเป็นระยะ (สำรอง — daemon ตรึงทุก 2 วิอยู่แล้ว)
+            if (rootOk) keepAlive.pinSelf()
             delay(intervalMs)
         }
     }
