@@ -1,11 +1,14 @@
 """
 routers/auth.py — ล็อกอินด้วย Discord OAuth2 (session cookie)
 ------------------------------------------------------------------
-- GET  /auth/discord            → redirect ไป Discord
+- GET  /auth/discord            → redirect ไป Discord (มี state กัน CSRF)
 - GET  /auth/discord/callback   → แลก code → สร้าง/อัปเดต user → set session
 - POST /auth/logout             → ล้าง session
 - GET  /auth/dev                → ล็อกอินจำลอง (เฉพาะ DEV_AUTH=true)
 - GET  /api/me                  → ข้อมูลผู้ใช้ปัจจุบัน
+
+ข้อผิดพลาดระหว่างล็อกอินจะ redirect กลับหน้าแรกพร้อม ?auth_error=<รหัส>
+(ให้หน้า login แสดงข้อความภาษาไทย ไม่โชว์ JSON ดิบ)
 """
 from __future__ import annotations
 
@@ -28,6 +31,9 @@ router = APIRouter()
 DISCORD_API = "https://discord.com/api"
 DISCORD_AUTHORIZE = "https://discord.com/oauth2/authorize"
 
+def _login_redirect(error: str) -> RedirectResponse:
+    """กลับหน้า login พร้อมรหัสข้อผิดพลาด (UI แปลเป็นข้อความภาษาไทย)"""
+    return RedirectResponse(f"/?auth_error={error}", status_code=303)
 
 async def _upsert_user(db: AsyncSession, discord_id: str, username: str | None, avatar: str | None) -> User:
     user = (
@@ -42,7 +48,6 @@ async def _upsert_user(db: AsyncSession, discord_id: str, username: str | None, 
     await db.commit()
     await db.refresh(user)
     return user
-
 
 @router.get("/auth/discord")
 async def discord_login(request: Request, settings: Settings = Depends(get_settings)):
@@ -59,20 +64,27 @@ async def discord_login(request: Request, settings: Settings = Depends(get_setti
     }
     return RedirectResponse(f"{DISCORD_AUTHORIZE}?{urlencode(params)}")
 
-
 @router.get("/auth/discord/callback")
 async def discord_callback(
     request: Request,
-    code: str,
-    state: str,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
     if not settings.discord_enabled:
         raise HTTPException(status_code=400, detail="Discord ยังไม่ถูกตั้งค่า")
-    if not state or state != request.session.get("oauth_state"):
-        raise HTTPException(status_code=400, detail="state ไม่ถูกต้อง (กัน CSRF)")
-    request.session.pop("oauth_state", None)
+
+    # ผู้ใช้กด "ยกเลิก" หรือ Discord ปฏิเสธ → กลับหน้า login พร้อมข้อความ
+    if error:
+        request.session.pop("oauth_state", None)
+        return _login_redirect("denied" if error == "access_denied" else "discord")
+
+    # ตรวจ state ให้ตรงกับที่เก็บใน session (กัน CSRF)
+    expected = request.session.pop("oauth_state", None)
+    if not code or not state or state != expected:
+        return _login_redirect("state")
 
     async with httpx.AsyncClient(timeout=15) as client:
         tok = await client.post(
@@ -87,14 +99,14 @@ async def discord_callback(
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         if tok.status_code != 200:
-            raise HTTPException(status_code=400, detail="แลก token กับ Discord ไม่สำเร็จ")
+            return _login_redirect("token")
         access_token = tok.json().get("access_token")
         me = await client.get(
             f"{DISCORD_API}/users/@me",
             headers={"Authorization": f"Bearer {access_token}"},
         )
         if me.status_code != 200:
-            raise HTTPException(status_code=400, detail="ดึงข้อมูลผู้ใช้จาก Discord ไม่สำเร็จ")
+            return _login_redirect("profile")
         info = me.json()
 
     user = await _upsert_user(
@@ -104,8 +116,7 @@ async def discord_callback(
         avatar=info.get("avatar"),
     )
     request.session["user_id"] = user.id
-    return RedirectResponse("/")
-
+    return RedirectResponse("/", status_code=303)
 
 @router.get("/auth/dev")
 async def dev_login(
@@ -118,14 +129,12 @@ async def dev_login(
         raise HTTPException(status_code=404, detail="not found")
     user = await _upsert_user(db, discord_id="dev-local", username="dev", avatar=None)
     request.session["user_id"] = user.id
-    return RedirectResponse("/")
-
+    return RedirectResponse("/", status_code=303)
 
 @router.post("/auth/logout")
 async def logout(request: Request):
     request.session.clear()
     return {"ok": True}
-
 
 @router.get("/api/me")
 async def me(user: User = Depends(get_current_user)):

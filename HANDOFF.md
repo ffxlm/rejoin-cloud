@@ -105,6 +105,8 @@ python3 -m venv .venv
 
 ### 🟠 P1 — Backend จริง (แทน in-memory) — ✅ เสร็จแล้ว (commit `68beb0b`)
 - [x] **Discord OAuth2** login (session cookie) + `/auth/dev` สำหรับ dev
+- [x] **Discord OAuth2 ตั้งค่าจริงแล้ว** — `.env` (Client ID/Secret) + โหลด `.env` อัตโนมัติ
+      (python-dotenv) + จัดการ error เป็นภาษาไทย + โชว์ avatar จริง (6 เทสต์ใหม่)
 - [x] **PostgreSQL** — 5 ตารางตาม `CONTRACT.md` (SQLAlchemy async; dev = SQLite)
 - [x] **Redis** — เก็บ `last_seen` (TTL) + คิวคำสั่ง (dev = fakeredis)
 - [x] ออก/จัดการ **รหัสเครื่อง** (Argon2 + lookup sha256 — ไม่เก็บ plaintext) + revoke
@@ -113,7 +115,7 @@ python3 -m venv .venv
 - [x] แดชบอร์ด Jinja2 + ปุ่ม arm/disarm/rejoin_now + เพิ่มเครื่อง
 - [x] **Deploy stack** — `deploy/` (Dockerfile + compose app/pg/redis/Caddy) + `DEPLOY.md`
 - [ ] deploy จริงบน VPS (ต้องมี VPS + โดเมนของคุณ)
-- [ ] ยืนยัน Discord OAuth กับ app จริง (ต้องมี DISCORD_CLIENT_ID/SECRET)
+- [ ] ยืนยัน Discord OAuth กับ app จริงบน production (ตั้ง `DISCORD_REDIRECT_URI=https://...` + `COOKIE_SECURE=true`)
 
 ### 🟡 P2 — ฟีเจอร์ใช้งานจริง
 - [ ] avatar/ตัวละคร/แมพ จาก Lua (มีแล้วบางส่วน — ทำ fallback)

@@ -75,8 +75,11 @@ curl https://rejoin.thirx.com/health
 ## Discord OAuth (ล็อกอินจริง)
 1. https://discord.com/developers/applications → New Application
 2. แท็บ **OAuth2** → คัดลอก **Client ID** + **Client Secret** ใส่ `deploy/.env`
-3. เพิ่ม **Redirect URI**: `https://rejoin.thirx.com/auth/discord/callback`
-4. หลัง deploy → หน้า login จะมีปุ่ม "เข้าสู่ระบบด้วย Discord"
+3. เพิ่ม **Redirect URI** (ต้องตรงเป๊ะ — ใส่ได้หลายอัน):
+   - production: `https://rejoin.thirx.com/auth/discord/callback`
+   - dev (เครื่องตัวเอง): `http://127.0.0.1:8000/auth/discord/callback`
+4. ตั้ง `DISCORD_REDIRECT_URI` ใน `.env` ให้ตรงกับโดเมนที่ใช้งาน + `COOKIE_SECURE=true` บน https
+5. หลัง deploy → หน้า login จะมีปุ่ม "เข้าสู่ระบบด้วย Discord"
 
 ---
 

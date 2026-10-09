@@ -22,6 +22,16 @@ import os
 from dataclasses import dataclass
 
 
+# โหลดไฟล์ .env อัตโนมัติ (ถ้ามี) — ทำให้รัน dev แล้วอ่านค่า Discord ได้เลย
+# ไม่มี .env / ไม่มี python-dotenv ก็ยังรันได้ (ใช้ค่า default หรือ env ของระบบ)
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:  # pragma: no cover - python-dotenv ไม่มีก็ข้าม
+    pass
+
+
 def _env_bool(name: str, default: bool) -> bool:
     v = os.getenv(name)
     if v is None:

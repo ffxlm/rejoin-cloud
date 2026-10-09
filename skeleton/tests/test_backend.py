@@ -11,6 +11,8 @@ import tempfile
 import time
 import unittest
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -40,7 +42,7 @@ class BackendTestCase(unittest.TestCase):
     # ---------- helpers ----------
     def _login(self, client: TestClient) -> None:
         r = client.get("/auth/dev", follow_redirects=False)
-        self.assertIn(r.status_code, (302, 307))
+        self.assertIn(r.status_code, (302, 303, 307))
 
     def _new_device(self, client: TestClient, name: str = "A"):
         r = client.post("/api/me/devices", json={"name": name})
@@ -247,6 +249,135 @@ class EventRetentionTest(unittest.IsolatedAsyncioTestCase):
             except OSError:
                 pass
 
+
+class _FakeResponse:
+    def __init__(self, status_code: int, payload: dict):
+        self.status_code = status_code
+        self._payload = payload
+
+    def json(self) -> dict:
+        return self._payload
+
+class _FakeDiscordClient:
+    """เลียนแบบ httpx.AsyncClient สำหรับเทสต์ OAuth (ไม่ยิงเน็ตจริง)"""
+
+    token_status = 200
+    me_status = 200
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def post(self, url, **kwargs):
+        if self.token_status != 200:
+            return _FakeResponse(self.token_status, {})
+        return _FakeResponse(200, {"access_token": "fake-access-token"})
+
+    async def get(self, url, **kwargs):
+        if self.me_status != 200:
+            return _FakeResponse(self.me_status, {})
+        return _FakeResponse(
+            200,
+            {"id": "123456789012345678", "username": "tester", "avatar": "abc123"},
+        )
+
+class DiscordAuthTestCase(unittest.TestCase):
+    """ทดสอบ flow ล็อกอิน Discord OAuth2 แบบครบวง (mock Discord API)"""
+
+    def setUp(self) -> None:
+        fd, self.db_path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        self.settings = Settings(
+            database_url=f"sqlite+aiosqlite:///{self.db_path}",
+            redis_url="",
+            session_secret="test-secret",
+            dev_auth=False,
+            discord_client_id="test-client-id",
+            discord_client_secret="test-client-secret",
+            discord_redirect_uri="http://testserver/auth/discord/callback",
+        )
+        self.app = create_app(self.settings)
+
+    def tearDown(self) -> None:
+        try:
+            os.unlink(self.db_path)
+        except OSError:
+            pass
+
+    def _start_login(self, client: TestClient) -> str:
+        r = client.get("/auth/discord", follow_redirects=False)
+        self.assertEqual(r.status_code, 307)
+        self.assertIn("discord.com/oauth2/authorize", r.headers["location"])
+        return parse_qs(urlparse(r.headers["location"]).query)["state"][0]
+
+    def test_login_redirects_to_discord_with_state(self) -> None:
+        with TestClient(self.app) as client:
+            self._start_login(client)
+
+    def test_callback_creates_user_and_session(self) -> None:
+        with TestClient(self.app) as client:
+            state = self._start_login(client)
+            with patch(
+                "skeleton.backend.routers.auth.httpx.AsyncClient", _FakeDiscordClient
+            ):
+                cb = client.get(
+                    f"/auth/discord/callback?code=abc&state={state}",
+                    follow_redirects=False,
+                )
+            self.assertEqual(cb.status_code, 303)
+            self.assertEqual(cb.headers["location"], "/")
+
+            me = client.get("/api/me")
+            self.assertEqual(me.status_code, 200)
+            body = me.json()
+            self.assertEqual(body["username"], "tester")
+            self.assertTrue(
+                body["avatar_url"].startswith("https://cdn.discordapp.com/avatars/")
+            )
+
+    def test_callback_rejects_bad_state(self) -> None:
+        with TestClient(self.app) as client:
+            self._start_login(client)
+            cb = client.get(
+                "/auth/discord/callback?code=abc&state=wrong",
+                follow_redirects=False,
+            )
+            self.assertEqual(cb.status_code, 303)
+            self.assertIn("auth_error=state", cb.headers["location"])
+
+    def test_callback_handles_denied(self) -> None:
+        with TestClient(self.app) as client:
+            cb = client.get(
+                "/auth/discord/callback?error=access_denied",
+                follow_redirects=False,
+            )
+            self.assertEqual(cb.status_code, 303)
+            self.assertIn("auth_error=denied", cb.headers["location"])
+
+    def test_callback_handles_token_failure(self) -> None:
+        with TestClient(self.app) as client:
+            state = self._start_login(client)
+
+            class _Failing(_FakeDiscordClient):
+                token_status = 400
+
+            with patch("skeleton.backend.routers.auth.httpx.AsyncClient", _Failing):
+                cb = client.get(
+                    f"/auth/discord/callback?code=abc&state={state}",
+                    follow_redirects=False,
+                )
+            self.assertEqual(cb.status_code, 303)
+            self.assertIn("auth_error=token", cb.headers["location"])
+
+    def test_login_page_shows_discord_button(self) -> None:
+        with TestClient(self.app) as client:
+            html = client.get("/").text
+            self.assertIn("/auth/discord", html)
 
 if __name__ == "__main__":
     unittest.main()

@@ -76,10 +76,25 @@ async def build_device_view(
     }
 
 
+def _discord_avatar_url(discord_id: Optional[str], avatar: Optional[str]) -> Optional[str]:
+    """สร้าง URL รูปโปรไฟล์ Discord (รองรับ GIF ถ้าเป็น animated avatar)"""
+    if not discord_id:
+        return None
+    if avatar:
+        ext = "gif" if avatar.startswith("a_") else "png"
+        return f"https://cdn.discordapp.com/avatars/{discord_id}/{avatar}.{ext}?size=64"
+    # ไม่มี avatar → ใช้รูป default ตามอัลกอริทึมของ Discord
+    try:
+        idx = (int(discord_id) >> 22) % 6
+    except (TypeError, ValueError):
+        return None
+    return f"https://cdn.discordapp.com/embed/avatars/{idx}.png"
+
 def user_public(user: User) -> dict:
     return {
         "id": user.id,
         "discord_id": user.discord_id,
         "username": user.username,
         "avatar": user.avatar,
+        "avatar_url": _discord_avatar_url(user.discord_id, user.avatar),
     }

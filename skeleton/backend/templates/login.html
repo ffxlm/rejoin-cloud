@@ -98,6 +98,13 @@
     <h1>ยินดีต้อนรับกลับ</h1>
     <p class="sub">เข้าสู่ระบบเพื่อเริ่มดูแลเกมของคุณ</p>
 
+    {% if auth_error %}
+      <div class="warn" role="alert">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <span>{{ auth_error }}</span>
+      </div>
+    {% endif %}
+
     <ul>
       <li>
         <span class="icw"><svg class="ic"><use href="#i-refresh"/></svg></span>

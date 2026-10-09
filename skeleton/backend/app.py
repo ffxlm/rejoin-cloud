@@ -104,11 +104,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(agent_router.router)
     app.include_router(device_router.router)
 
+    _AUTH_ERRORS = {
+        "denied": "คุณยกเลิกการเข้าสู่ระบบ หรือไม่อนุญาตสิทธิ์ กรุณาลองใหม่",
+        "state": "เซสชันล็อกอินหมดอายุหรือไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง",
+        "token": "เชื่อมต่อ Discord ไม่สำเร็จ (แลก token) กรุณาลองใหม่",
+        "profile": "ดึงข้อมูลผู้ใช้จาก Discord ไม่สำเร็จ กรุณาลองใหม่",
+        "discord": "Discord ตอบกลับข้อผิดพลาด กรุณาลองใหม่",
+    }
+
     def _login_response(request: Request) -> HTMLResponse:
+        err = request.query_params.get("auth_error")
         return templates.TemplateResponse(
             request,
             "login.html",
-            {"discord_enabled": settings.discord_enabled, "dev_auth": settings.dev_auth},
+            {
+                "discord_enabled": settings.discord_enabled,
+                "dev_auth": settings.dev_auth,
+                "auth_error": _AUTH_ERRORS.get(err) if err else None,
+            },
         )
 
     async def _current_user(request: Request, db: AsyncSession) -> User | None:
