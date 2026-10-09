@@ -1,11 +1,16 @@
 package com.rejoin.agent
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -74,13 +79,40 @@ class MainActivity : AppCompatActivity() {
         prefs.deviceCode = code
         prefs.serverUrl = server
         prefs.placeId = place
+        prefs.watchEnabled = true
 
+        requestIgnoreBatteryOptimizations()
         ContextCompat.startForegroundService(this, Intent(this, RejoinService::class.java))
     }
 
     private fun stopWatching() {
+        prefs.watchEnabled = false
         stopService(Intent(this, RejoinService::class.java))
         AgentState.setStatus(getString(R.string.status_stopped), StatusLevel.IDLE)
+    }
+
+    /**
+     * ขอยกเว้น battery optimization (Doze) — ตัวการหลักที่ทำให้ระบบฆ่าแอปตอนเข้าเกม
+     * ถ้ายังไม่ได้รับยกเว้น → เด้งไปหน้า settings ให้ผู้ใช้กด Allow
+     * (ต้องมีสิทธิ์ REQUEST_IGNORE_BATTERY_OPTIMIZATIONS ใน manifest)
+     */
+    @SuppressLint("BatteryLife")
+    private fun requestIgnoreBatteryOptimizations() {
+        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
+        if (pm.isIgnoringBatteryOptimizations(packageName)) return
+        try {
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                    .setData(Uri.parse("package:$packageName")),
+            )
+        } catch (e: Exception) {
+            // บาง ROM ไม่มีหน้านี้ตรง ๆ → เปิดหน้ารายการที่เกี่ยวข้องแทน
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (_: Exception) {
+                // ROM ไม่มีทั้งคู่ — ข้าม ไม่ให้แอปล้ม
+            }
+        }
     }
 
     private fun observeState() {

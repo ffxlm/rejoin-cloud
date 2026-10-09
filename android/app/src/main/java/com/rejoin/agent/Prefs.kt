@@ -51,6 +51,11 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_TIMEOUT, 300)
         set(v) = sp.edit().putInt(KEY_TIMEOUT, v).apply()
 
+    /** ผู้ใช้กด "เฝ้าเกม" อยู่หรือไม่ — ใช้เปิด service กลับหลังรีบูต/ถูกฆ่า */
+    var watchEnabled: Boolean
+        get() = sp.getBoolean(KEY_WATCH, false)
+        set(v) = sp.edit().putBoolean(KEY_WATCH, v).apply()
+
     companion object {
         private const val KEY_DEVICE_CODE = "device_code"
         private const val KEY_SERVER_URL = "server_url"
@@ -59,6 +64,7 @@ class Prefs(context: Context) {
         private const val KEY_INTERVAL = "interval_sec"
         private const val KEY_SILENCE = "silence_sec"
         private const val KEY_TIMEOUT = "timeout_sec"
+        private const val KEY_WATCH = "watch_enabled"
 
         const val DEFAULT_SERVER = "https://rejoin.thirx.com"
         const val DEFAULT_PLACE_ID = 107778070777162L

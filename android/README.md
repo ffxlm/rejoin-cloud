@@ -42,7 +42,28 @@ push โค้ดใน `android/` ขึ้น GitHub → workflow `.github/wor
 ## ยังไม่ทำ (สเต็ปถัดไป)
 - [ ] File watcher อ่าน `Delta/Workspace/lua_state.json` → คำนวณความเงียบ
 - [ ] พอร์ต `watchdog.py` เป็น Kotlin (pure state machine)
-- [ ] root: `su -c am force-stop / am start`
-- [ ] ยัด Lua (atomic + backup) — พอร์ตจาก `device.py:push_lua`
-- [ ] heartbeat + poll คำสั่ง arm/disarm/rejoin_now (OkHttp)
-- [ ] ลงทะเบียนด้วยรหัสเครื่อง → เก็บ device_token
+- [x] root: `su -c am force-stop / am start`
+- [x] ยัด Lua (atomic + backup) — พอร์ตจาก `device.py:push_lua`
+- [x] heartbeat + poll คำสั่ง arm/disarm/rejoin_now (OkHttp)
+- [x] ลงทะเบียนด้วยรหัสเครื่อง → เก็บ device_token
+
+## กันแอปถูกระบบฆ่าตอนเข้าเกม (cloud phone)
+
+**อาการ:** กด "เฝ้าเกม" แล้วเข้าเกมไปสักพัก แอป/notification หาย — เพราะตอนเกมรัน
+(Roblox/Delta กิน RAM หนัก) ROM จะฆ่า process พื้นหลัง แม้เป็น Foreground Service
+
+**สิ่งที่แก้ในโค้ดแล้ว:**
+- `android:stopWithTask="false"` → ปัดแอปออกจาก Recent Apps แล้ว service ไม่ตาย
+- ขอยกเว้น **battery optimization / Doze** อัตโนมัติตอนกด "เฝ้าเกม" (ต้องกด Allow)
+  (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` + `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`)
+- `onTaskRemoved()` → สั่งเปิด service ตัวเองกลับ (เผื่อ ROM ยังฆ่า)
+- `BootReceiver` → รีบูตเครื่องแล้วเปิด service กลับ (ถ้าเคยกดเฝ้าไว้)
+
+**สิ่งที่ต้องทำบนเครื่องคลาวโฟนเอง (สำคัญ — โค้ดทำแทนไม่ได้):**
+- ตั้งค่า ROM: อนุญาต **auto-start / background running / อย่าฆ่าแอปนี้**
+- ล็อกแอปไว้ใน Recent Apps (ไอคอนกุญแจ) ถ้า ROM มี
+- ปิด "ประหยัดแบตอัตโนมัติ" / "ล้างหน่วยความจำอัตโนมัติ" ของ ROM
+- เปิด notification ของแอปไว้ (ไม่งั้น Android 13+ ตัด foreground service ได้)
+
+> ⚠️ Google Play เข้มงวดกับ `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` — APK นี้แจกนอก Play
+> (sideload / cloud phone) จึงใช้ได้ แต่ถ้าจะขึ้น Play ต้องเปลี่ยนไปใช้วิธีอื่น

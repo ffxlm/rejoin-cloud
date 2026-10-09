@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- ขอได้รับการยกเว้นจาก Doze/battery optimization — ไม่งั้นระบบฆ่าแอปตอนเข้าเกม -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:allowBackup="false"
@@ -24,15 +26,27 @@
             </intent-filter>
         </activity>
 
-        <!-- Foreground Service: เฝ้าเกมตลอดเวลา (กัน Doze/ระบบฆ่า) -->
+        <!-- Foreground Service: เฝ้าเกมตลอดเวลา (กัน Doze/ระบบฆ่า)
+             stopWithTask=false → กดปัดแอปออกจาก Recent Apps แล้ว service ต้องไม่ตาย -->
         <service
             android:name=".RejoinService"
             android:exported="false"
+            android:stopWithTask="false"
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="auto-rejoin watchdog" />
         </service>
+
+        <!-- รีบูตเครื่องเสร็จ → เปิด service กลับมา ถ้าผู้ใช้เคยกด "เฝ้าเกม" ไว้ -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

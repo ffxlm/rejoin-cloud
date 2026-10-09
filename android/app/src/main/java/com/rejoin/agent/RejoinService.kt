@@ -9,6 +9,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -57,6 +58,20 @@ class RejoinService : Service() {
         job = null
         scope.cancel()
         super.onDestroy()
+    }
+
+    /**
+     * ผู้ใช้ปัดแอปออกจาก Recent Apps
+     * - ประกาศ `stopWithTask=false` ใน manifest แล้ว แต่บาง ROM ยังฆ่า → สั่งเปิดตัวเองกลับ
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (prefs.watchEnabled) {
+            ContextCompat.startForegroundService(
+                applicationContext,
+                Intent(applicationContext, RejoinService::class.java),
+            )
+        }
+        super.onTaskRemoved(rootIntent)
     }
 
     private fun startForegroundCompat(notification: Notification) {
