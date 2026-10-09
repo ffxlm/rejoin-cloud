@@ -113,6 +113,9 @@ python3 -m venv .venv
 - [x] `/api/agent/register` ตรวจ device_code จริง (ไม่รับมั่วแล้ว)
 - [x] ย้าย event log จาก memory → ตาราง `events`
 - [x] แดชบอร์ด Jinja2 + ปุ่ม arm/disarm/rejoin_now + เพิ่มเครื่อง
+- [x] **ระบบหลังบ้าน (admin)** — หน้า `/admin` (ภาพรวม + ผู้ใช้ + เครื่องทั้งหมด)
+      ปุ่มในเมนูโชว์เฉพาะแอดมิน · ผู้ใช้คนแรกเป็นแอดมินอัตโนมัติ · จัดการสิทธิ์ผ่าน
+      `python -m skeleton.backend.cli list|grant|revoke <discord_id>` (5 เทสต์ใหม่)
 - [x] **Deploy stack** — `deploy/` (Dockerfile + compose app/pg/redis/Caddy) + `DEPLOY.md`
 - [ ] deploy จริงบน VPS (ต้องมี VPS + โดเมนของคุณ)
 - [ ] ยืนยัน Discord OAuth กับ app จริงบน production (ตั้ง `DISCORD_REDIRECT_URI=https://...` + `COOKIE_SECURE=true`)

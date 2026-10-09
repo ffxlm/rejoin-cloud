@@ -379,5 +379,83 @@ class DiscordAuthTestCase(unittest.TestCase):
             html = client.get("/").text
             self.assertIn("/auth/discord", html)
 
+
+class AdminAccessTestCase(unittest.TestCase):
+    """ทดสอบระบบหลังบ้าน: ผู้ใช้คนแรกเป็นแอดมิน + กันสิทธิ์เข้าถึง"""
+
+    def setUp(self) -> None:
+        fd, self.db_path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        self.settings = Settings(
+            database_url=f"sqlite+aiosqlite:///{self.db_path}",
+            redis_url="",
+            session_secret="test-secret",
+            dev_auth=True,
+            discord_client_id="test-client-id",
+            discord_client_secret="test-client-secret",
+            discord_redirect_uri="http://testserver/auth/discord/callback",
+        )
+        self.app = create_app(self.settings)
+
+    def tearDown(self) -> None:
+        try:
+            os.unlink(self.db_path)
+        except OSError:
+            pass
+
+    def _login_dev(self, client: TestClient) -> None:
+        r = client.get("/auth/dev", follow_redirects=False)
+        self.assertIn(r.status_code, (302, 303, 307))
+
+    def _login_discord(self, client: TestClient) -> None:
+        """ล็อกอินผู้ใช้คนที่สองผ่าน Discord (mock) → ไม่ใช่แอดมิน"""
+        start = client.get("/auth/discord", follow_redirects=False)
+        state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+        with patch("skeleton.backend.routers.auth.httpx.AsyncClient", _FakeDiscordClient):
+            client.get(
+                f"/auth/discord/callback?code=abc&state={state}",
+                follow_redirects=False,
+            )
+
+    def test_first_user_becomes_admin(self) -> None:
+        with TestClient(self.app) as client:
+            self._login_dev(client)
+            self.assertTrue(client.get("/api/me").json()["is_admin"])
+            page = client.get("/admin")
+            self.assertEqual(page.status_code, 200)
+            self.assertIn("ภาพรวมระบบ", page.text)
+
+    def test_non_admin_is_forbidden(self) -> None:
+        with TestClient(self.app) as client:
+            self._login_dev(client)       # ผู้ใช้คนแรก = แอดมิน
+            self._login_discord(client)   # ผู้ใช้คนที่สอง = ผู้ใช้ทั่วไป
+            self.assertFalse(client.get("/api/me").json()["is_admin"])
+            self.assertEqual(client.get("/admin").status_code, 403)
+            self.assertEqual(client.get("/api/admin/overview").status_code, 403)
+            self.assertEqual(client.get("/api/admin/users").status_code, 403)
+            self.assertEqual(client.get("/api/admin/devices").status_code, 403)
+
+    def test_anonymous_sees_login(self) -> None:
+        with TestClient(self.app) as client:
+            r = client.get("/admin")
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("เข้าสู่ระบบ", r.text)
+
+    def test_sidebar_button_only_for_admin(self) -> None:
+        with TestClient(self.app) as client:
+            self._login_dev(client)
+            self.assertIn('href="/admin"', client.get("/").text)
+            self._login_discord(client)
+            self.assertNotIn('href="/admin"', client.get("/").text)
+
+    def test_admin_overview_api(self) -> None:
+        with TestClient(self.app) as client:
+            self._login_dev(client)
+            body = client.get("/api/admin/overview").json()
+            self.assertEqual(body["users"], 1)
+            self.assertEqual(body["devices"], 0)
+            self.assertEqual(body["rejoins"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

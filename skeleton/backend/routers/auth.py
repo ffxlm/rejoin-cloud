@@ -40,7 +40,16 @@ async def _upsert_user(db: AsyncSession, discord_id: str, username: str | None, 
         await db.execute(select(User).where(User.discord_id == discord_id))
     ).scalar_one_or_none()
     if user is None:
-        user = User(discord_id=discord_id, username=username, avatar=avatar)
+        # bootstrap: ผู้ใช้คนแรกของระบบได้เป็นแอดมินอัตโนมัติ (เฉพาะเมื่อยังไม่มีแอดมินเลย)
+        has_admin = (
+            await db.execute(select(User.id).where(User.is_admin.is_(True)).limit(1))
+        ).scalar_one_or_none() is not None
+        user = User(
+            discord_id=discord_id,
+            username=username,
+            avatar=avatar,
+            is_admin=not has_admin,
+        )
         db.add(user)
     else:
         user.username = username

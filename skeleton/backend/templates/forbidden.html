@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}ไม่มีสิทธิ์เข้าถึง — Rejoin{% endblock %}
+{% block mobiletitle %}ไม่มีสิทธิ์เข้าถึง{% endblock %}
+
+{% block head %}
+  .deny{max-width:520px;margin:8vh auto 0;text-align:center;
+        border:1px solid var(--border);border-radius:18px;background:var(--bg-2);padding:44px 28px}
+  .deny .big{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;margin:0 auto 18px;
+             color:#ef7a7a;background:rgba(235,87,87,.12);border:1px solid rgba(235,87,87,.24)}
+  .deny .big .ic{width:24px;height:24px}
+  .deny h1{margin:0 0 8px;font-size:20px;font-weight:700;letter-spacing:-.02em}
+  .deny p{margin:0 0 22px;font-size:13px;color:var(--muted);line-height:1.7}
+{% endblock %}
+
+{% block content %}
+  <div class="deny">
+    <div class="big"><svg class="ic"><use href="#i-lock"/></svg></div>
+    <h1>เฉพาะแอดมินเท่านั้น</h1>
+    <p>บัญชีของคุณไม่มีสิทธิ์เข้าถึงระบบหลังบ้าน<br>หากคิดว่าเป็นความผิดพลาด กรุณาติดต่อแอดมิน</p>
+    <a class="btn primary" href="/">
+      <svg class="ic"><use href="#i-monitor"/></svg> กลับไปแดชบอร์ด
+    </a>
+  </div>
+{% endblock %}

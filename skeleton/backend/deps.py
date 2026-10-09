@@ -41,6 +41,13 @@ async def get_current_user(
     return user
 
 
+async def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    """เฉพาะแอดมินเท่านั้น (ใช้กับ endpoint /api/admin/*)"""
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="ต้องเป็นแอดมินเท่านั้น")
+    return user
+
+
 async def get_current_device(
     request: Request,
     db: AsyncSession = Depends(get_db),

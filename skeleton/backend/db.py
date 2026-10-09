@@ -48,6 +48,14 @@ def ensure_schema(conn) -> None:
     if "screenshots" in tables:
         conn.execute(text("DROP TABLE screenshots"))
 
+    # เพิ่มคอลัมน์ is_admin ให้ users ที่มีอยู่เดิม (ค่าเริ่มต้น = ไม่ใช่แอดมิน)
+    if "users" in tables:
+        ucols = {c["name"] for c in insp.get_columns("users")}
+        if "is_admin" not in ucols:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE")
+            )
+
     if "devices" not in tables:
         return
     cols = {c["name"] for c in insp.get_columns("devices")}

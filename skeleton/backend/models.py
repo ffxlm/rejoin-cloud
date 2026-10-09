@@ -44,6 +44,10 @@ class User(Base):
     discord_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     username: Mapped[Optional[str]] = mapped_column(String(128))
     avatar: Mapped[Optional[str]] = mapped_column(String(256))
+    # แอดมิน = เข้าหลังบ้าน (/admin) ได้ — ตั้งค่าได้ผ่าน CLI (backend/cli.py)
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
     devices: Mapped[List["Device"]] = relationship(

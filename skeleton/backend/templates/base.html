@@ -245,6 +245,12 @@
       <a class="nav-item {{ 'active' if active == 'bypass' }}" href="/bypass">
         <svg class="ic"><use href="#i-zap"/></svg> Bypass
       </a>
+      {% if user and user.is_admin %}
+      <div class="nav-label">ADMIN</div>
+      <a class="nav-item {{ 'active' if active == 'admin' }}" href="/admin">
+        <svg class="ic"><use href="#i-shield"/></svg> หลังบ้าน
+      </a>
+      {% endif %}
     </nav>
 
     <div class="side-foot">

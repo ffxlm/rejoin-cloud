@@ -32,9 +32,11 @@ from .events import cleanup_old_events
 from .models import Device, Event, User
 from .redis_store import Store, build_store
 from .routers import agent as agent_router
+from .routers import admin as admin_router
 from .routers import auth as auth_router
 from .routers import device as device_router
 from .routers import me as me_router
+from .routers.admin import build_device_rows, build_overview, build_user_rows
 from .serializers import build_device_view, user_public
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -103,6 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(me_router.router)
     app.include_router(agent_router.router)
     app.include_router(device_router.router)
+    app.include_router(admin_router.router)
 
     _AUTH_ERRORS = {
         "denied": "คุณยกเลิกการเข้าสู่ระบบ หรือไม่อนุญาตสิทธิ์ กรุณาลองใหม่",
@@ -272,6 +275,37 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "active": "download",
                 "apk": apk,
                 "lua_ok": os.path.isfile(lua_path),
+            },
+        )
+
+    @app.get("/admin", response_class=HTMLResponse)
+    async def admin_panel(
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+        store: Store = Depends(get_store),
+    ):
+        user = await _current_user(request, db)
+        if user is None:
+            return _login_response(request)
+        # ปุ่มในเมนูโชว์เฉพาะแอดมิน — แต่ต้องกันที่ฝั่งเซิร์ฟเวอร์ด้วย (เข้า URL ตรง ๆ)
+        if not user.is_admin:
+            return templates.TemplateResponse(
+                request,
+                "forbidden.html",
+                {"user": user_public(user)},
+                status_code=403,
+            )
+
+        overview = await build_overview(db, store, settings)
+        return templates.TemplateResponse(
+            request,
+            "admin.html",
+            {
+                "user": user_public(user),
+                "active": "admin",
+                "overview": overview,
+                "users": await build_user_rows(db),
+                "devices": await build_device_rows(db, store, settings),
             },
         )
 

@@ -97,4 +97,5 @@ def user_public(user: User) -> dict:
         "username": user.username,
         "avatar": user.avatar,
         "avatar_url": _discord_avatar_url(user.discord_id, user.avatar),
+        "is_admin": bool(user.is_admin),
     }
