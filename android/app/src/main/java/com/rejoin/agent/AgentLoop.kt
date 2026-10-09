@@ -39,6 +39,11 @@ class AgentLoop(
     private var luaReady = false
     private var lastLuaTrySec = 0
 
+    /** สถานะ root — auto-rejoin ต้องใช้ force-stop; ถ้าไม่มี ต้องแจ้งผู้ใช้ตรง ๆ */
+    private var rootOk = true
+    private var rootMsg = ""
+    private var lastRootState: RootShell.RootState? = null
+
     suspend fun run() {
         // ---- 1) ลงทะเบียน ----
         AgentState.setStatus("กำลังลงทะเบียน…", StatusLevel.INFO, running = true)
@@ -57,19 +62,26 @@ class AgentLoop(
             return
         }
 
-        // ---- 2) ติดตั้ง Lua ลง Autoexecute ----
-        AgentState.setStatus("กำลังติดตั้ง Lua…", StatusLevel.INFO, running = true)
-        val install = luaInstaller.install()
-        luaReady = install.ok
-        lastLuaTrySec = nowSec()
-        if (install.ok) {
-            AgentState.log("ติดตั้ง Lua → Delta/Autoexecute สำเร็จ (${install.detail})")
+        // ---- 2) เช็ค root ก่อน (auto-rejoin ต้องใช้ force-stop) ----
+        refreshRoot()
+
+        // ---- 3) ติดตั้ง Lua ลง Autoexecute (เฉพาะเมื่อมีรูท) ----
+        if (rootOk) {
+            AgentState.setStatus("กำลังติดตั้ง Lua…", StatusLevel.INFO, running = true)
+            val install = luaInstaller.install()
+            luaReady = install.ok
+            lastLuaTrySec = nowSec()
+            if (install.ok) {
+                AgentState.log("ติดตั้ง Lua → Delta/Autoexecute สำเร็จ (${install.detail})")
+            } else {
+                AgentState.log("ติดตั้ง Lua ไม่สำเร็จ: ${install.detail}")
+            }
         } else {
-            AgentState.log("ติดตั้ง Lua ไม่สำเร็จ: ${install.detail} — จะลองใหม่อีกเรื่อยๆ")
+            lastLuaTrySec = nowSec()
         }
 
         // เกมยังไม่รัน → ล้าง state เก่าที่ค้างจากรอบก่อน (กันข้อมูลผี: ชื่อ/แมพของ session เก่า)
-        if (!root.gameRunning()) {
+        if (rootOk && !root.gameRunning()) {
             root.run("rm -f '${RootShell.STATE_FILE}'")
             AgentState.log("ล้าง state เก่า (เกมยังไม่รัน)")
         }
@@ -77,7 +89,7 @@ class AgentLoop(
         val intervalMs = prefs.intervalSec.coerceAtLeast(3) * 1000L
         AgentState.log("เริ่มเฝ้า: interval=${intervalMs / 1000}s silence=${prefs.silenceSec}s timeout=${prefs.timeoutSec}s")
 
-        // ---- 3) loop หลัก ----
+        // ---- 4) loop หลัก ----
         while (currentCoroutineContext().isActive) {
             val raw = root.readLuaState()
             val gameRunning = root.gameRunning()
@@ -102,18 +114,26 @@ class AgentLoop(
             val cmd = api.heartbeat(watchdog, obs, sessionStart, liveState)
             handleCommand(cmd)
 
-            // Lua ยังลงไม่สำเร็จ → ลองใหม่เรื่อยๆ (ทุก ~LUA_RETRY_SEC) จนกว่าจะได้
+            // ยังไม่พร้อม → เช็ค root + ลองติดตั้งใหม่ทุก ~LUA_RETRY_SEC
             if (!luaReady && now - lastLuaTrySec >= LUA_RETRY_SEC) {
                 lastLuaTrySec = now
-                val retry = luaInstaller.install()
-                luaReady = retry.ok
-                AgentState.log(
-                    if (retry.ok) "ติดตั้ง Lua สำเร็จ (หลังลองใหม่)"
-                    else "ติดตั้ง Lua ยังไม่สำเร็จ: ${retry.detail}"
-                )
+                refreshRoot()
+                if (rootOk) {
+                    val retry = luaInstaller.install()
+                    luaReady = retry.ok
+                    AgentState.log(
+                        if (retry.ok) "ติดตั้ง Lua สำเร็จ (หลังลองใหม่)"
+                        else "ติดตั้ง Lua ยังไม่สำเร็จ: ${retry.detail}"
+                    )
+                }
+                // ไม่มีรูท → ไม่ลองติดตั้ง (ไม่มีทางสำเร็จ) รอผู้ใช้อนุญาตก่อน
             }
 
-            AgentState.setStatus(phaseStatus(watchdog.phase))
+            // การ์ดสถานะ: ไม่มีรูท → แจ้งตรง ๆ แทนสถานะ phase ปกติ (ผู้ใช้จะได้เห็นชัด ๆ)
+            AgentState.setStatus(
+                if (rootOk) phaseStatus(watchdog.phase)
+                else AgentStatus(rootMsg, StatusLevel.ERROR, running = true)
+            )
 
             // รายละเอียดเทคนิค (phase/game/lua_age/rejoin) ย้ายไปอยู่ใน log แทนการ์ดสถานะ
             // เขียนเฉพาะตอน phase เปลี่ยน — ไม่งั้น log จะล้นทุก interval
@@ -176,6 +196,26 @@ class AgentLoop(
         val r = luaInstaller.install()
         luaReady = r.ok
         if (!r.ok) AgentState.log("ติดตั้ง Lua $whenLabel ไม่สำเร็จ: ${r.detail}")
+    }
+
+    /**
+     * เช็ค root แล้วอัปเดตสถานะ — ถ้าไม่มี ให้ log ตรง ๆ ว่า "เครื่องไม่ได้รูท"
+     * (log เฉพาะตอนสถานะเปลี่ยน กันข้อความซ้ำทุก 60 วิ)
+     */
+    private fun refreshRoot() {
+        val r = root.checkRoot()
+        rootOk = r.state == RootShell.RootState.OK
+        rootMsg = when (r.state) {
+            RootShell.RootState.OK -> ""
+            RootShell.RootState.NOT_ROOTED -> "เครื่องนี้ไม่ได้รูท — ใช้ auto-rejoin ไม่ได้"
+            RootShell.RootState.DENIED -> "เครื่องนี้ยังไม่อนุญาต root — กด Allow ใน Magisk"
+        }
+        if (r.state != lastRootState) {
+            lastRootState = r.state
+            if (!rootOk) AgentState.log(rootMsg)
+        }
+        // แสดงบนการ์ดสถานะทันที (ไม่รอ loop) — ผู้ใช้จะได้เห็นว่าเครื่องไม่ได้รูท
+        if (!rootOk) AgentState.setStatus(rootMsg, StatusLevel.ERROR, running = true)
     }
 
     private fun androidId(): String? =

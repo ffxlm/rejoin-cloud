@@ -30,10 +30,8 @@ class LuaInstaller(
             if (r.ok) {
                 InstallResult(true, "เขียนแล้ว ${bytes.size} ไบต์")
             } else {
-                InstallResult(
-                    false,
-                    "ติดตั้งไม่สำเร็จ (exit=${r.code}): ${r.out.trim().take(180)}",
-                )
+                // ถ้า pushLua คืนข้อความ (เช่น "เครื่องนี้ไม่ได้รูท") → โชว์ตรง ๆ
+                InstallResult(false, r.out.trim().take(180).ifEmpty { "ติดตั้งไม่สำเร็จ (exit=${r.code})" })
             }
         } catch (e: Exception) {
             InstallResult(false, "เขียนไฟล์ชั่วคราวไม่สำเร็จ: ${e.message}")

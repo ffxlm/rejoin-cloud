@@ -98,7 +98,10 @@ python3 -m venv .venv
 - [x] ลงทะเบียนด้วยรหัสเครื่อง → ได้ device_token — `Api.register`
 - [x] ดึง Lua จากเว็บ (`GET /api/download/lua`) แล้วเขียนลง `Delta/Autoexecute` (atomic+backup) — `LuaInstaller`
 - [x] **ติดตั้ง Lua ทนขึ้น + log บอกสาเหตุ** — หา path `Autoexecute` หลายแบบ (ตัวพิมพ์/`/sdcard`) + สร้างถ้าไม่มี,
-      เช็คสิทธิ์ root ก่อน, retry ทุก 60 วิ จนสำเร็จ, log เหตุผลจริง (HTTP/exit code/ข้อความ error) — `LuaInstaller`/`RootShell`/`AgentLoop`/`Api`
+      retry ทุก 60 วิ จนสำเร็จ, log เหตุผลจริง (HTTP/exit code/ข้อความ error) — `LuaInstaller`/`RootShell`/`AgentLoop`/`Api`
+- [x] **แจ้งผู้ใช้ตรง ๆ เมื่อเครื่องไม่ได้รูท** — เช็ค `su` (แยก "ไม่ได้รูท" ออกจาก "ยังไม่อนุญาต")
+      แล้วขึ้นการ์ดสถานะสีแดง + log ว่า "เครื่องนี้ไม่ได้รูท" · ข้ามการติดตั้ง Lua เมื่อไม่มีรูท (ไม่มีทางสำเร็จ)
+      · เช็คซ้ำทุก 60 วิ เผื่อผู้ใช้อนุญาตภายหลัง — `RootShell.checkRoot()`
 - [x] อ่าน `lua_state.json` → คำนวณความเงียบ — `RootShell` + `LuaState`
 - [x] watchdog state machine (พอร์ตจาก `watchdog.py`) — `Watchdog.kt` + 17 unit tests
 - [x] สั่งรีเกมผ่าน root (`su -c am force-stop / am start`) — `RootShell`

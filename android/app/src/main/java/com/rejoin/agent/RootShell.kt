@@ -15,9 +15,22 @@ class RootShell {
         val ok: Boolean get() = code == 0
     }
 
-    fun run(command: String, timeoutMs: Long = 20_000): Result {
+    /** สถานะ root — แยก "เครื่องไม่ได้รูท" ออกจาก "รูทอยู่แต่ยังไม่อนุญาตแอป" */
+    enum class RootState { OK, NOT_ROOTED, DENIED }
+
+    data class RootCheck(val state: RootState, val detail: String)
+
+    /** รันคำสั่งผ่าน root (`su -c …`) */
+    fun run(command: String, timeoutMs: Long = 20_000): Result =
+        exec(listOf("su", "-c", command), timeoutMs)
+
+    /** รันคำสั่งแบบไม่ใช้ root (สิทธิ์ของแอปเอง) — ใช้ probe ว่าเครื่องมี su ไหม */
+    fun runSh(command: String, timeoutMs: Long = 10_000): Result =
+        exec(listOf("sh", "-c", command), timeoutMs)
+
+    private fun exec(argv: List<String>, timeoutMs: Long): Result {
         return try {
-            val pb = ProcessBuilder("su", "-c", command)
+            val pb = ProcessBuilder(argv)
             pb.redirectErrorStream(true)
             val proc = pb.start()
             val out = proc.inputStream.bufferedReader().readText()
@@ -39,10 +52,25 @@ class RootShell {
         return r.ok && r.out.trim().isNotEmpty()
     }
 
-    /** ตรวจว่า su ใช้งานได้จริง (ไม่ถูกปฏิเสธสิทธิ์) — ไว้แยกอาการ "ไม่มี root" ออกจาก error อื่น */
-    fun rootAvailable(): Boolean {
-        val r = run("id")
-        return r.ok && r.out.contains("uid=0")
+    /** เช็ค root แบบละเอียด — ให้ log บอกตรง ๆ ได้ว่า "เครื่องไม่ได้รูท" หรือ "ยังไม่อนุญาต" */
+    fun checkRoot(): RootCheck {
+        val su = findSu() ?: return RootCheck(RootState.NOT_ROOTED, "ไม่พบ su")
+        val r = run("id", timeoutMs = 8_000)
+        val out = r.out.trim()
+        return if (r.ok && out.contains("uid=0")) {
+            RootCheck(RootState.OK, out)
+        } else {
+            RootCheck(RootState.DENIED, out.ifEmpty { "su ถูกปฏิเสธ ($su)" })
+        }
+    }
+
+    /** หา su จาก path ที่พบบ่อย (รันด้วยสิทธิ์แอปเอง ไม่ต้อง root) */
+    private fun findSu(): String? {
+        val r = runSh(
+            "command -v su 2>/dev/null || " +
+                "ls /system/bin/su /system/xbin/su /sbin/su /su/bin/su 2>/dev/null | head -1"
+        )
+        return r.out.trim().lineSequence().firstOrNull()?.trim()?.ifEmpty { null }
     }
 
     fun readLuaState(): LuaState? {
@@ -70,8 +98,14 @@ class RootShell {
      * คืน [Result] เพื่อให้ผู้เรียกรู้สาเหตุจริง (exit code + ข้อความ error ของ su/cp/mv)
      */
     fun pushLua(localPath: String): Result {
-        if (!rootAvailable()) {
-            return Result(-1, "ไม่มีสิทธิ์ root (su ถูกปฏิเสธ) — อนุญาต root ให้แอปใน Magisk")
+        val root = checkRoot()
+        if (root.state != RootState.OK) {
+            val msg = when (root.state) {
+                RootState.NOT_ROOTED -> "เครื่องนี้ไม่ได้รูท (ไม่พบ su) — auto-rejoin ใช้ไม่ได้"
+                RootState.DENIED -> "เครื่องนี้รูทอยู่ แต่ยังไม่อนุญาตแอปนี้ — กด Allow ใน Magisk"
+                RootState.OK -> ""
+            }
+            return Result(-1, msg)
         }
         val dir = resolveAutoexecDir()
             ?: return Result(
