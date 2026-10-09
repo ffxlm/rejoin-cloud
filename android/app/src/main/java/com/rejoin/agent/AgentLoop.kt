@@ -46,6 +46,16 @@ class AgentLoop(
     private var lastRootState: RootShell.RootState? = null
 
     suspend fun run() {
+        // ---- 0) เช็ค root + กันถูกฆ่า ก่อน (ทำงานได้แม้ลงทะเบียน/เน็ตล้ม) ----
+        refreshRoot()
+        if (rootOk) {
+            val w = root.protectFromFreezer(context.packageName)
+            AgentState.log("กันแช่แข็งแอป (no_frozen): ${w.out.trim()}")
+            // กัน LMK ฆ่า (RAM น้อย): daemon ตรึง oom_score_adj + เปิด service กลับถ้าตาย
+            keepAlive.start()
+            AgentState.log("เปิดตัวกันถูกฆ่า (keep-alive daemon)")
+        }
+
         // ---- 1) ลงทะเบียน ----
         AgentState.setStatus("กำลังลงทะเบียน…", StatusLevel.INFO, running = true)
         val reg = api.register(androidId())
@@ -63,19 +73,7 @@ class AgentLoop(
             return
         }
 
-        // ---- 2) เช็ค root ก่อน (auto-rejoin ต้องใช้ force-stop) ----
-        refreshRoot()
-
-        // ---- 2.1) กัน ColorOS/realme แช่แข็งแอป (FastFreezer) — ตัวการที่ loop หยุดตอนเข้าเกม ----
-        if (rootOk) {
-            val w = root.protectFromFreezer(context.packageName)
-            AgentState.log("กันแช่แข็งแอป (no_frozen): ${w.out.trim()}")
-            // กัน LMK ฆ่า (RAM น้อย): daemon ตรึง oom_score_adj + เปิด service กลับถ้าตาย
-            keepAlive.start()
-            AgentState.log("เปิดตัวกันถูกฆ่า (keep-alive daemon)")
-        }
-
-        // ---- 3) ติดตั้ง Lua ลง Autoexecute (เฉพาะเมื่อมีรูท) ----
+        // ---- 2) ติดตั้ง Lua ลง Autoexecute (เฉพาะเมื่อมีรูท) ----
         if (rootOk) {
             AgentState.setStatus("กำลังติดตั้ง Lua…", StatusLevel.INFO, running = true)
             val install = luaInstaller.install()
