@@ -94,6 +94,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await engine.dispose()
 
     app = FastAPI(title="Rejoin Backend", version="1.0.0", lifespan=lifespan)
+    # ตัวแปรที่ทุก template เข้าถึงได้ (ปุ่ม "เข้าร่วมชุมชน" ใช้ร่วมกันทุกหน้า)
+    templates.env.globals["discord_invite_url"] = settings.discord_invite_url
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.session_secret,
@@ -122,7 +124,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "login.html",
             {
                 "discord_enabled": settings.discord_enabled,
-                "dev_auth": settings.dev_auth,
                 "auth_error": _AUTH_ERRORS.get(err) if err else None,
             },
         )

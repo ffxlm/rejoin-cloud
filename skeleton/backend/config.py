@@ -62,6 +62,8 @@ class Settings:
     discord_client_id: str = ""
     discord_client_secret: str = ""
     discord_redirect_uri: str = "http://127.0.0.1:8000/auth/discord/callback"
+    # ลิงก์ชวนเข้าเซิร์ฟเวอร์ Discord (แสดงปุ่ม "เข้าร่วมชุมชน")
+    discord_invite_url: str = "https://discord.gg/N7Kuayuzxb"
 
     # ---- dev conveniences ----
     dev_auth: bool = True  # /auth/dev (ปิดใน production)
@@ -95,6 +97,7 @@ class Settings:
             discord_client_id=os.getenv("DISCORD_CLIENT_ID", cls.discord_client_id),
             discord_client_secret=os.getenv("DISCORD_CLIENT_SECRET", cls.discord_client_secret),
             discord_redirect_uri=os.getenv("DISCORD_REDIRECT_URI", cls.discord_redirect_uri),
+            discord_invite_url=os.getenv("DISCORD_INVITE_URL", cls.discord_invite_url),
             dev_auth=_env_bool("DEV_AUTH", cls.dev_auth),
             offline_after_sec=_env_int("OFFLINE_AFTER_SEC", cls.offline_after_sec),
             silence_sec=_env_int("SILENCE_SEC", cls.silence_sec),
