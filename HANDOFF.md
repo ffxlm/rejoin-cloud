@@ -117,6 +117,8 @@ python3 -m venv .venv
       ปุ่มในเมนูโชว์เฉพาะแอดมิน · ผู้ใช้คนแรกเป็นแอดมินอัตโนมัติ · จัดการสิทธิ์ผ่าน
       `python -m skeleton.backend.cli list|grant|revoke <discord_id>` (5 เทสต์ใหม่)
 - [x] **Deploy stack** — `deploy/` (Dockerfile + compose app/pg/redis/Caddy) + `DEPLOY.md`
+- [x] **APK อัตโนมัติ** — GitHub Actions build + เผยแพร่ไป Release แท็ก `apk-latest`
+      (ลิงก์คงที่) · เว็บ production ดาวน์โหลดผ่าน `APK_URL` · dev เสิร์ฟ `dist/*.apk` ก่อน
 - [ ] deploy จริงบน VPS (ต้องมี VPS + โดเมนของคุณ)
 - [ ] ยืนยัน Discord OAuth กับ app จริงบน production (ตั้ง `DISCORD_REDIRECT_URI=https://...` + `COOKIE_SECURE=true`)
 
