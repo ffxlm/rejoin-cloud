@@ -54,6 +54,8 @@ class Config:
     # รอกู้กี่วิก่อนถือว่าล้มเหลว — ต้องครอบเวลาเปิดเกม+โหลดแมพ
     # เน็ตคลาวโฟนปกติใช้ ~60-120 วิ; ตั้ง 300 เพื่อกันเน็ตช้า/เกมโหลดนาน (ปรับได้)
     rejoin_timeout_sec: int = 300
+    # Lua บอก loading/menu แต่ไฟล์เริ่มเก่า → ให้เวลาก่อนตัดสินว่าตาย (กันรีเกมทับตอนโหลด)
+    loading_grace_sec: int = 120
     backoff_sec: tuple = (30, 60, 120)  # หน่วงระหว่างครั้ง (กัน rejoin storm)
     max_attempts: int = 3          # เกินนี้ → alert
 
@@ -70,6 +72,8 @@ class Watchdog:
     next_allowed_at: int = 0
     last_rejoin_at: Optional[int] = None
     rejoin_count: int = 0
+    # เวลา (วิ) ที่เริ่มเข้าเงื่อนไข "loading แต่ไฟล์เริ่มเก่า" — ให้ grace ก่อนตัดสินว่าตาย
+    loading_since: Optional[int] = None
 
     # ---------- public ----------
     def arm(self, now: int) -> None:
@@ -77,11 +81,13 @@ class Watchdog:
         self.attempts = 0
         self.rejoin_started_at = None
         self.next_allowed_at = 0
+        self.loading_since = None
 
     def disarm(self) -> None:
         self.armed = False
         self.rejoin_started_at = None
         self.attempts = 0
+        self.loading_since = None
 
     def observe(self, now: int, obs: Observation) -> List[Action]:
         """รับ observation แล้วคืน action ที่ต้องทำ (0 หรือ 1 อย่าง)"""
@@ -90,6 +96,7 @@ class Watchdog:
 
         if not self.armed:
             self.phase = base
+            self.loading_since = None
             return []
 
         # armed: เฝ้าความเงียบ
@@ -102,7 +109,20 @@ class Watchdog:
             self.attempts = 0
             self.rejoin_started_at = None
             self.next_allowed_at = 0
+            self.loading_since = None
             return []
+
+        # เกมกำลังโหลด (Lua บอก loading/menu) แต่ไฟล์เริ่มเก่า —
+        # ให้ grace ก่อนตัดสินว่า "ตาย" เพื่อไม่รีเกมทับตอนโหลด (เน็ตช้า/โหลดนาน)
+        if obs.loading:
+            if self.loading_since is None:
+                self.loading_since = now
+            if now - self.loading_since < self.cfg.loading_grace_sec:
+                self.phase = Phase.REJOINING
+                return []  # ยังโหลดอยู่ — รอ
+            self.loading_since = None  # grace หมด → ปล่อยผ่านไปกู้ตามปกติ
+        else:
+            self.loading_since = None
 
         # ---- เงียบ / เกมหลุด ----
         # กำลังรอผลการกู้?

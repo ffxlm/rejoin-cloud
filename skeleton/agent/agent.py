@@ -118,12 +118,15 @@ class Agent:
                 except Exception:
                     age = None
                 lua_state = state.get("state")
-                extra = {
-                    "avatar": state.get("avatar"),
-                    "character": state.get("character"),
-                    "map": state.get("map"),
-                    "lua_state": lua_state,
-                }
+                # ส่งข้อมูลตัวละคร/แมพ เฉพาะตอน "ข้อมูลจริง" (เกมรัน + Lua สด)
+                # — กันค่าผีจากไฟล์ state เก่าค้างขึ้นแดชบอร์ด
+                if running and age is not None and age <= self.wd.cfg.silence_sec:
+                    extra = {
+                        "avatar": state.get("avatar"),
+                        "character": state.get("character"),
+                        "map": state.get("map"),
+                        "lua_state": lua_state,
+                    }
 
             obs = Observation(online=True, game_running=running,
                               lua_age_sec=age, lua_state=lua_state)

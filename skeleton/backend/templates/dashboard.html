@@ -46,6 +46,7 @@
   .mi .k .ic{width:12px;height:12px}
   .mi .v{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mi .v.ok{color:#5fc99a} .mi .v.no{color:var(--dim)}
+  .mi .v.stale{color:var(--dim);font-style:italic}
 
   .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:15px;border-top:1px solid var(--border)}
   .actions .spacer{flex:1}
@@ -396,6 +397,12 @@ function relTime(sec){
   return Math.floor(sec/86400) + ' วันที่แล้ว';
 }
 function text(el, v){ if (el) el.textContent = v; }
+function meta(el, v, stale){
+  if (!el) return;
+  el.textContent = v || '—';
+  el.classList.toggle('stale', !!stale && !v);
+  el.title = (stale && !v) ? 'ยังไม่มีข้อมูลจริง (เกมปิด/ข้อมูลเก่า)' : '';
+}
 
 async function poll(){
   if (document.hidden || document.querySelector('.modal.open')) return;
@@ -423,8 +430,8 @@ async function poll(){
 
     const game = card.querySelector('.js-game');
     if (game){ game.textContent = d.game_running ? 'เปิดอยู่' : 'ปิด'; game.className = 'v js-game ' + (d.game_running ? 'ok' : 'no'); }
-    text(card.querySelector('.js-character'), d.character || '—');
-    text(card.querySelector('.js-map'), d.map || '—');
+    meta(card.querySelector('.js-character'), d.character, d.data_stale);
+    meta(card.querySelector('.js-map'), d.map, d.data_stale);
     text(card.querySelector('.js-rejoins'), d.rejoin_count || 0);
 
     const ls = card.querySelector('.js-lastseen');

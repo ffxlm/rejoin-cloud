@@ -58,28 +58,38 @@ class AgentLoop(
             AgentState.log("ติดตั้ง Lua ไม่สำเร็จ (จะลองใหม่ก่อนรีเกม)")
         }
 
+        // เกมยังไม่รัน → ล้าง state เก่าที่ค้างจากรอบก่อน (กันข้อมูลผี: ชื่อ/แมพของ session เก่า)
+        if (!root.gameRunning()) {
+            root.run("rm -f '${RootShell.STATE_FILE}'")
+            AgentState.log("ล้าง state เก่า (เกมยังไม่รัน)")
+        }
+
         val intervalMs = prefs.intervalSec.coerceAtLeast(3) * 1000L
         AgentState.log("เริ่มเฝ้า: interval=${intervalMs / 1000}s silence=${prefs.silenceSec}s timeout=${prefs.timeoutSec}s")
 
         // ---- 3) loop หลัก ----
         while (currentCoroutineContext().isActive) {
-            val state = root.readLuaState()
+            val raw = root.readLuaState()
             val gameRunning = root.gameRunning()
             val now = nowSec()
-            val age = state?.let { (now - it.ts).toInt() }
+            val age = raw?.let { (now - it.ts).toInt() }
+            val fresh = age != null && age <= prefs.silenceSec
 
             val obs = Observation(
                 online = true,
                 gameRunning = gameRunning,
                 luaAgeSec = age,
-                luaState = state?.state,
+                luaState = raw?.state,
             )
 
             for (action in watchdog.observe(now, obs)) {
                 doAction(action)
             }
 
-            val cmd = api.heartbeat(watchdog, obs, sessionStart, state)
+            // ส่งข้อมูลตัวละคร/แมพ/place ขึ้นเว็บ "เฉพาะตอนข้อมูลจริง"
+            // (เกมรันอยู่ + Lua ยังสด) — กันค่าผีจากไฟล์ state เก่าค้างขึ้นแดชบอร์ด
+            val liveState = raw?.takeIf { gameRunning && fresh }
+            val cmd = api.heartbeat(watchdog, obs, sessionStart, liveState)
             handleCommand(cmd)
 
             AgentState.setStatus(

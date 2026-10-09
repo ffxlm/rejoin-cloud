@@ -40,6 +40,7 @@ data class Observation(
 data class Config(
     val silenceSec: Int = 60,          // เงียบนานเท่านี้ = ตัดสินว่าตาย
     val rejoinTimeoutSec: Int = 300,   // รอกู้กี่วิก่อนถือว่าล้มเหลว (กันเน็ตช้า/เกมโหลดนาน)
+    val loadingGraceSec: Int = 120,    // Lua บอก loading/menu → ให้เวลาก่อนตัดสินว่าตาย (กันรีเกมทับตอนโหลด)
     val backoffSec: List<Int> = listOf(30, 60, 120),
     val maxAttempts: Int = 3,
 )
@@ -60,18 +61,23 @@ class Watchdog(val cfg: Config = Config()) {
         private set
     var rejoinCount: Int = 0
         private set
+    /** เวลา (วิ) ที่เริ่มเข้าเงื่อนไข "loading แต่ไฟล์เริ่มเก่า" — ใช้ให้ grace ก่อนตัดสินว่าตาย */
+    var loadingSince: Int? = null
+        private set
 
     fun arm(now: Int) {
         armed = true
         attempts = 0
         rejoinStartedAt = null
         nextAllowedAt = 0
+        loadingSince = null
     }
 
     fun disarm() {
         armed = false
         rejoinStartedAt = null
         attempts = 0
+        loadingSince = null
     }
 
     /** รับ observation แล้วคืน action ที่ต้องทำ (0 หรือ 1 อย่าง) */
@@ -80,6 +86,7 @@ class Watchdog(val cfg: Config = Config()) {
 
         if (!armed) {
             phase = base
+            loadingSince = null
             return emptyList()
         }
 
@@ -90,7 +97,21 @@ class Watchdog(val cfg: Config = Config()) {
             attempts = 0
             rejoinStartedAt = null
             nextAllowedAt = 0
+            loadingSince = null
             return emptyList()
+        }
+
+        // เกมกำลังโหลด (Lua บอก loading/menu) แต่ไฟล์เริ่มเก่า —
+        // ให้ grace ก่อนตัดสินว่า "ตาย" เพื่อไม่รีเกมทับตอนโหลด (เน็ตช้า/โหลดนาน)
+        if (obs.loading) {
+            val since = loadingSince ?: now.also { loadingSince = it }
+            if (now - since < cfg.loadingGraceSec) {
+                phase = Phase.REJOINING
+                return emptyList() // ยังโหลดอยู่ — รอ
+            }
+            loadingSince = null // grace หมด → ปล่อยผ่านไปกู้ตามปกติ
+        } else {
+            loadingSince = null
         }
 
         // กำลังรอผลการกู้?

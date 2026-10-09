@@ -155,4 +155,31 @@ class WatchdogTest {
         assertFalse(obs(age = 1, state = "in_game").loading)
         assertFalse(obs(age = 1, state = null).loading)
     }
+
+    // ---- loading grace (Lua บอก loading แต่ไฟล์เริ่มเก่า) ----
+    @Test fun loadingStaleWithinGraceNoRejoin() {
+        val w = Watchdog(Config(silenceSec = 60, loadingGraceSec = 120)).also { it.arm(0) }
+        val acts = w.observe(100, obs(game = true, age = 70, state = "loading"))
+        assertEquals(emptyList<Action>(), acts)
+        assertEquals(0, w.rejoinCount)
+        val acts2 = w.observe(200, obs(game = true, age = 170, state = "loading"))
+        assertEquals(emptyList<Action>(), acts2)
+        assertEquals(0, w.rejoinCount)
+    }
+
+    @Test fun loadingGraceExpiresThenRejoin() {
+        val w = Watchdog(Config(silenceSec = 60, loadingGraceSec = 120)).also { it.arm(0) }
+        w.observe(100, obs(game = true, age = 70, state = "loading"))          // เริ่ม grace ที่ 100
+        val acts = w.observe(230, obs(game = true, age = 200, state = "loading")) // 130 > 120 → หมด grace
+        assertEquals(listOf(Action.REJOIN), acts)
+        assertEquals(1, w.rejoinCount)
+    }
+
+    @Test fun loadingGraceResetsWhenAlive() {
+        val w = Watchdog(Config(silenceSec = 60, loadingGraceSec = 120)).also { it.arm(0) }
+        w.observe(100, obs(game = true, age = 70, state = "loading"))
+        w.observe(150, obs(game = true, age = 3, state = "loading")) // กลับมาสด → reset grace
+        assertEquals(null, w.loadingSince)
+        assertEquals(Phase.ARMED, w.phase)
+    }
 }

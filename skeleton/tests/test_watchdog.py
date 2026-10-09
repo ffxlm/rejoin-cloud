@@ -156,5 +156,38 @@ class TestSlowNetwork(unittest.TestCase):
         self.assertFalse(obs(age=1, state=None).loading)
 
 
+class TestLoadingGrace(unittest.TestCase):
+    """Lua บอก loading แต่ไฟล์เริ่มเก่า → ให้ grace ก่อนตัดสินว่าตาย (กันรีเกมทับตอนโหลด)"""
+
+    def _wd(self, grace=120):
+        w = Watchdog(Config(silence_sec=60, loading_grace_sec=grace,
+                            backoff_sec=(30, 60, 120), max_attempts=3))
+        w.arm(0)
+        return w
+
+    def test_loading_stale_within_grace_no_rejoin(self):
+        w = self._wd()
+        acts = w.observe(100, obs(game=True, age=70, state="loading"))
+        self.assertEqual(acts, [])
+        self.assertEqual(w.rejoin_count, 0)
+        acts2 = w.observe(200, obs(game=True, age=170, state="loading"))
+        self.assertEqual(acts2, [])
+        self.assertEqual(w.rejoin_count, 0)
+
+    def test_loading_grace_expires_then_rejoin(self):
+        w = self._wd()
+        w.observe(100, obs(game=True, age=70, state="loading"))     # เริ่ม grace ที่ 100
+        acts = w.observe(230, obs(game=True, age=200, state="loading"))  # 130 > 120
+        self.assertEqual(acts, [Action.REJOIN])
+        self.assertEqual(w.rejoin_count, 1)
+
+    def test_loading_grace_resets_when_alive(self):
+        w = self._wd()
+        w.observe(100, obs(game=True, age=70, state="loading"))
+        w.observe(150, obs(game=True, age=3, state="loading"))      # กลับมาสด → reset
+        self.assertIsNone(w.loading_since)
+        self.assertEqual(w.phase, Phase.ARMED)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

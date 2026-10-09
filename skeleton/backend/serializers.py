@@ -42,6 +42,15 @@ async def build_device_view(
         lua_active = lua_active and hb_age <= settings.silence_sec
     display_age = hb_age if hb_age is not None else (state.lua_age_sec if state else None)
 
+    # ข้อมูล "จริง" = เกมรันอยู่ + heartbeat ยังสด (Lua เขียนไฟล์ล่าสุด)
+    # ถ้าไม่จริง → data_stale=True ให้ UI ซ่อน/จางค่าล่าสุด (กันข้อมูลผีโชว์เป็นค่าปัจจุบัน)
+    live = (
+        status != "offline"
+        and bool(hb.get("game_running"))
+        and hb_age is not None
+        and hb_age <= settings.silence_sec
+    )
+
     return {
         "device_id": str(device.id),
         "name": device.name,
@@ -54,6 +63,7 @@ async def build_device_view(
         "lua_active": lua_active,
         "lua_state": hb.get("lua_state") or (state.lua_state if state else None),
         "lua_age_sec": display_age,
+        "data_stale": not live,
         "avatar": (state.avatar if state else None),
         "character": (state.character if state else None),
         "map": (state.map if state else None),
