@@ -20,6 +20,21 @@ push โค้ดใน `android/` ขึ้น GitHub → workflow `.github/wor
 
 กด build เองได้จาก Actions → *Android APK* → **Run workflow** (`workflow_dispatch`)
 
+## เซ็น APK ด้วยคีย์ถาวร (signature เดิมทุก build)
+
+เดิม debug APK จาก CI สร้าง keystore ใหม่ทุก run → **signature เปลี่ยนทุกครั้ง**
+ทำให้ `adb install -r` ล้ม (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`) ต้องถอนแอปเก่าก่อน
+(ข้อมูลหาย ต้องกรอกรหัสเครื่องใหม่)
+
+แก้แล้วด้วยการเซ็นด้วยคีย์ถาวรที่เก็บใน **GitHub Secrets**:
+- `ANDROID_KEYSTORE_BASE64` — ไฟล์ `rejoin.jks` เข้ารหัส base64
+- `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+
+workflow จะถอด keystore ไปที่ `android/app/keystore/rejoin.jks` แล้ว `gradle` เซ็นให้
+(`app/build.gradle.kts` → `signingConfigs.rejoin`) → **อัปเดตทับได้เลย**
+
+> 🔑 เก็บสำเนา keystore + รหัสไว้ให้ดี (ดู `ANDROID_KEYSTORE_BASE64`) — หายแล้วเซ็นทับไม่ได้อีก
+
 ## ติดตั้งลงเครื่องจริง
 ```bash
 .tools/platform-tools/adb install -r rejoin-agent-debug/app-debug.apk

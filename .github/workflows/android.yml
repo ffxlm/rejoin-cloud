@@ -42,10 +42,22 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      # ถอด keystore ถาวรจาก Secret → ใช้เซ็นทุก build (signature เดิม อัปเดตทับได้)
+      - name: Decode signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p app/keystore
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/keystore/rejoin.jks
+
       - name: Run unit tests (watchdog)
         run: gradle testDebugUnitTest --no-daemon --stacktrace
 
       - name: Build debug APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK

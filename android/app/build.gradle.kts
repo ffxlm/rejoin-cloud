@@ -15,8 +15,29 @@ android {
         versionName = "0.2.0"
     }
 
+    // ---- signing ถาวร ----
+    // ใช้คีย์เดียวกันทุก build (CI ถอดจาก GitHub Secret มาวางที่ keystore/rejoin.jks)
+    // → อัปเดต APK ทับได้เลย ไม่ต้องถอนแอป/กรอกรหัสใหม่
+    // ถ้าไม่มีไฟล์ (เช่น build ในเครื่อง dev) → fallback เป็น debug keystore ปกติ
+    signingConfigs {
+        create("rejoin") {
+            storeFile = file("keystore/rejoin.jks")
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "android"
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "rejoin"
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            if (file("keystore/rejoin.jks").exists()) {
+                signingConfig = signingConfigs.getByName("rejoin")
+            }
+        }
         release {
+            if (file("keystore/rejoin.jks").exists()) {
+                signingConfig = signingConfigs.getByName("rejoin")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
