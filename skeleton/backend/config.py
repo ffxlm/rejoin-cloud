@@ -87,7 +87,7 @@ class Settings:
     )
     # เวอร์ชัน APK ที่โชว์บนหน้า /download — ตั้งให้ตรงกับ versionName ใน
     # android/app/build.gradle.kts ทุกครั้งที่อัป APK (env: APK_VERSION)
-    apk_version: str = "0.3.0"
+    apk_version: str = "0.3.1"
 
     # ---- retention ของประวัติเหตุการณ์ (events) ----
     event_retention_days: int = 30     # ลบเหตุการณ์ที่เก่ากว่านี้

@@ -97,6 +97,14 @@ class AgentLoop(
         val intervalMs = prefs.intervalSec.coerceAtLeast(3) * 1000L
         AgentState.log("เริ่มเฝ้า: interval=${intervalMs / 1000}s silence=${prefs.silenceSec}s timeout=${prefs.timeoutSec}s")
 
+        // ---- กู้สถานะ "เฝ้าเกม" เดิมหลัง service ถูกเปิดกลับ (KeepAlive/รีบูต/ปัดแอปออก) ----
+        // ถ้าไม่กู้ watchdog จะเริ่ม armed=false → heartbeat รายงาน false ไปล้างค่าที่
+        // เว็บสั่งไว้ → หน้าเว็บเด้งกลับเป็น "ยังไม่เฝ้า" ทั้งที่ผู้ใช้กดเริ่มไปแล้ว
+        if (prefs.watchEnabled) {
+            watchdog.arm(nowSec())
+            AgentState.log("กู้สถานะเฝ้าเดิม (armed)")
+        }
+
         // ---- 4) loop หลัก ----
         while (currentCoroutineContext().isActive) {
             val raw = root.readLuaState()
@@ -184,10 +192,12 @@ class AgentLoop(
         when (cmd) {
             "arm" -> {
                 watchdog.arm(nowSec())
+                prefs.watchEnabled = true
                 AgentState.log("armed by web")
             }
             "disarm" -> {
                 watchdog.disarm()
+                prefs.watchEnabled = false
                 AgentState.log("disarmed by web")
             }
             "rejoin_now" -> {

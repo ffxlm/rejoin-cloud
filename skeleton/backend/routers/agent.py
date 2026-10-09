@@ -82,10 +82,24 @@ async def heartbeat(
     now = int(time.time())
     device.last_seen = datetime.fromtimestamp(now, tz=timezone.utc)
     device.status = body.state or "connected"
-    if body.armed is not None:
-        device.armed = body.armed
     if body.session_start:
         device.session_start = _utc(body.session_start)
+
+    # ---- เจตนา arm/disarm: ให้ฝั่งเว็บ/คำสั่งเป็นหลัก ----
+    # ปัญหาเดิม: เขียน device.armed = body.armed ตรง ๆ ทำให้ APK ที่รีสตาร์ท
+    # (armed ในหน่วยความจำหาย เพราะ KeepAlive/รีบูต เปิด service กลับ) รายงาน
+    # armed=false มาล้างค่าที่เว็บสั่งไว้ → หน้าเว็บเด้งกลับเป็น "ยังไม่เฝ้า"
+    # แก้: ยึดค่าที่เว็บสั่ง + สั่ง arm/disarm กลับไปให้ APK ตรงกัน
+    cmd = await store.pop_command(device.id)
+    cmd_name = (cmd or {}).get("command")
+    if cmd_name == "arm":
+        device.armed = True
+    elif cmd_name == "disarm":
+        device.armed = False
+    elif body.armed:
+        # แอปกด "เฝ้าเกม" เอง → สะท้อนขึ้นเว็บ (รับเฉพาะตอนเปิด)
+        device.armed = True
+    # หมายเหตุ: ไม่รับ body.armed=False มาล้างค่า (กัน clobber) — ดูการ re-issue ด้านล่าง
 
     # state จาก Lua (denormalized, เพื่อโชว์ค่า "ล่าสุด" — ไม่อัปเดตทับด้วย None)
     state = await db.get(DeviceState, device.id)
@@ -125,7 +139,9 @@ async def heartbeat(
         ttl=settings.last_seen_ttl_sec,
     )
 
-    cmd = await store.pop_command(device.id)
+    # เว็บสั่ง arm ไว้ แต่ APK ยังไม่ armed (เช่น เพิ่งรีสตาร์ท) → สั่ง arm กลับไปให้ตรง
+    if cmd is None and device.armed and body.armed is False:
+        cmd = {"command": "arm", "id": f"sync{now}"}
     return HeartbeatOut(ok=True, command=(cmd or {}).get("command"))
 
 

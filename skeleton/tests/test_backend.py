@@ -186,6 +186,50 @@ class BackendTestCase(unittest.TestCase):
             self.assertEqual(d["character"], "ch")
             self.assertEqual(d["map"], "mp")
 
+    def test_arm_survives_agent_restart(self) -> None:
+        """APK รีสตาร์ท (armed ในหน่วยความจำหาย) ต้องไม่ล้างสถานะ armed ที่เว็บสั่งไว้
+        — และเว็บต้องสั่ง arm กลับไปให้ APK ตรงกัน"""
+        with TestClient(self.app) as client:
+            self._login(client)
+            dev = self._new_device(client)
+            token = self._register(client, dev["device_code"]).json()["device_token"]
+            hdr = {"Authorization": f"Bearer {token}"}
+            did = dev["device_id"]
+
+            # ผู้ใช้กด "เริ่มเฝ้าเกม" บนเว็บ
+            self.assertEqual(client.post(f"/api/device/{did}/arm").status_code, 200)
+
+            # heartbeat แรก: APK ยังไม่รู้ (armed=false) → ยึดค่าเว็บ + สั่ง arm กลับ
+            hb = client.post(
+                "/api/agent/heartbeat",
+                headers=hdr,
+                json={"state": "lua_active", "armed": False, "lua_active": True},
+            )
+            self.assertEqual(hb.json()["command"], "arm")
+            d = client.get("/api/me/devices").json()["devices"][0]
+            self.assertTrue(d["armed"], "armed ต้องคงอยู่ ไม่ถูกล้างด้วย armed=false")
+
+            # APK รับคำสั่งแล้ว → armed=true
+            client.post("/api/agent/heartbeat", headers=hdr, json={"state": "armed", "armed": True})
+            d = client.get("/api/me/devices").json()["devices"][0]
+            self.assertTrue(d["armed"])
+
+            # APK รีสตาร์ท (armed กลับเป็น false) → ต้อง re-issue arm ไม่ล้างค่า
+            hb = client.post(
+                "/api/agent/heartbeat",
+                headers=hdr,
+                json={"state": "lua_active", "armed": False, "lua_active": True},
+            )
+            self.assertEqual(hb.json()["command"], "arm")
+            d = client.get("/api/me/devices").json()["devices"][0]
+            self.assertTrue(d["armed"], "armed ต้องรอดจากการรีสตาร์ท")
+
+            # ผู้ใช้กด "หยุดเฝ้า" บนเว็บ → disarm ต้องทำงานจริง
+            self.assertEqual(client.post(f"/api/device/{did}/disarm").status_code, 200)
+            client.post("/api/agent/heartbeat", headers=hdr, json={"state": "lua_active", "armed": False})
+            d = client.get("/api/me/devices").json()["devices"][0]
+            self.assertFalse(d["armed"], "disarm ต้องคงค่าไว้")
+
     # ---------- ดาวน์โหลด APK ----------
     def test_apk_download_serves_local_file(self) -> None:
         with TestClient(self.app) as client:
