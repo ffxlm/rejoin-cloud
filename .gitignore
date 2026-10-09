@@ -25,3 +25,6 @@ build/
 # ---- OS/editor ----
 .DS_Store
 *.swp
+
+# ---- คีย์เซ็น APK (ห้ามขึ้น git) ----
+.keys/
