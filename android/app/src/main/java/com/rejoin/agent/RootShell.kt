@@ -130,6 +130,23 @@ class RootShell {
         return if (run("mkdir -p '$primary'").ok) primary else null
     }
 
+    /**
+     * กัน ColorOS/realme "FastFreezer" แช่แข็งแอป — ตัวการที่ทำให้ loop หยุดตอนเข้าเกม
+     *
+     * เพิ่ม package เราเข้า whitelist `no_frozen` (secure settings) ซึ่งเป็นรายชื่อแอป
+     * ที่ ROM ห้ามแช่แข็ง — ต้องมี root (WRITE_SECURE_SETTINGS)
+     * เครื่องที่ไม่ใช่ ColorOS จะไม่มีคีย์นี้ → `settings get` คืน "null" → ข้าม
+     */
+    fun protectFromFreezer(pkg: String): Result {
+        val cur = run("settings get secure no_frozen").out.trim()
+        if (cur.isEmpty() || cur == "null") return Result(0, "ไม่ใช่ ColorOS — ข้าม")
+        val parts = cur.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        if (parts.contains(pkg)) return Result(0, "อยู่ใน no_frozen แล้ว")
+        val next = (parts + pkg).joinToString(",")
+        val r = run("settings put secure no_frozen '$next'")
+        return if (r.ok) Result(0, "เพิ่มเข้า no_frozen แล้ว") else r
+    }
+
     companion object {
         const val GAME_PKG = "com.roblox.client"
         const val LUA_FILENAME = "rejoin_agent.lua"

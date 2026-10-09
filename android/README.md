@@ -58,12 +58,34 @@ push โค้ดใน `android/` ขึ้น GitHub → workflow `.github/wor
   (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` + `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`)
 - `onTaskRemoved()` → สั่งเปิด service ตัวเองกลับ (เผื่อ ROM ยังฆ่า)
 - `BootReceiver` → รีบูตเครื่องแล้วเปิด service กลับ (ถ้าเคยกดเฝ้าไว้)
+- **กัน ColorOS/realme FastFreezer** (เจอจริงบน realme RMX3201 / ColorOS 11):
+  ใส่ package ตัวเองเข้า whitelist `no_frozen` (secure settings) อัตโนมัติผ่าน root
+  → `RootShell.protectFromFreezer()` เรียกใน `AgentLoop.run()`
+
+### หลักฐานจากเครื่องจริง (realme RMX3201, ColorOS 11, RAM 2.8GB)
+- ตัวฆ่าไม่ใช่แค่ LMK แต่เป็น **`ColorHansManager` (FastFreezer) ของ realme**:
+  `freeze uid: 10257 package: com.rejoin.agent ... scene: FastFreezerScene`
+  → process ยังอยู่ แต่ถูก **แช่แข็ง** (CPU ไม่ถูกจัดคิว) → loop/heartbeat หยุด
+- ตรวจสอบ:
+  ```bash
+  adb shell dumpsys deviceidle whitelist | grep rejoin          # ต้องอยู่ (battery exempt)
+  adb shell cat /proc/$(adb shell pidof com.rejoin.agent)/oom_score_adj  # 200 = fg-service
+  adb logcat | grep -i "ColorHansManager.*rejoin"               # ดูว่าโดน freeze ไหม
+  ```
+- แก้ผ่าน root (ได้ผลทันที ไม่ต้องรีบูต):
+  ```bash
+  adb shell su -c 'settings get secure no_frozen'               # ดูรายชื่อ
+  adb shell su -c "settings put secure no_frozen '<เดิม>,com.rejoin.agent'"
+  ```
+  หลังเพิ่ม → CPU tick ของ process ขยับปกติ และไม่มีบรรทัด `fastfreezer` freeze อีก
 
 **สิ่งที่ต้องทำบนเครื่องคลาวโฟนเอง (สำคัญ — โค้ดทำแทนไม่ได้):**
 - ตั้งค่า ROM: อนุญาต **auto-start / background running / อย่าฆ่าแอปนี้**
+  (realme: ตั้งค่า → แบตเตอรี่ → จัดการแบตเตอรี่แอป → อนุญาตให้ทำงานเบื้องหลัง)
 - ล็อกแอปไว้ใน Recent Apps (ไอคอนกุญแจ) ถ้า ROM มี
 - ปิด "ประหยัดแบตอัตโนมัติ" / "ล้างหน่วยความจำอัตโนมัติ" ของ ROM
 - เปิด notification ของแอปไว้ (ไม่งั้น Android 13+ ตัด foreground service ได้)
+- ⚠️ auto-start (oppoguardelf) ของ realme ตั้งผ่าน settings ไม่ได้ — ต้องกดใน UI
 
 > ⚠️ Google Play เข้มงวดกับ `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` — APK นี้แจกนอก Play
 > (sideload / cloud phone) จึงใช้ได้ แต่ถ้าจะขึ้น Play ต้องเปลี่ยนไปใช้วิธีอื่น

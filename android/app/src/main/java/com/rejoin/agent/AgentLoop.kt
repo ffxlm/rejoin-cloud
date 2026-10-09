@@ -65,6 +65,12 @@ class AgentLoop(
         // ---- 2) เช็ค root ก่อน (auto-rejoin ต้องใช้ force-stop) ----
         refreshRoot()
 
+        // ---- 2.1) กัน ColorOS/realme แช่แข็งแอป (FastFreezer) — ตัวการที่ loop หยุดตอนเข้าเกม ----
+        if (rootOk) {
+            val w = root.protectFromFreezer(context.packageName)
+            AgentState.log("กันแช่แข็งแอป (no_frozen): ${w.out.trim()}")
+        }
+
         // ---- 3) ติดตั้ง Lua ลง Autoexecute (เฉพาะเมื่อมีรูท) ----
         if (rootOk) {
             AgentState.setStatus("กำลังติดตั้ง Lua…", StatusLevel.INFO, running = true)
