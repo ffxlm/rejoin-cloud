@@ -50,7 +50,46 @@
   .note.info{color:#9db8dd;background:rgba(78,167,252,.08);border:1px solid rgba(78,167,252,.2)}
   .note.info .ic{color:var(--blue)}
 
-  @media(max-width:560px){ .dl{padding:18px} .dl-act{min-width:100%} }
+  /* ---------- หน้าตาแอป (mockup) ---------- */
+  .preview{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;align-items:start;
+           border:1px solid var(--border);border-radius:16px;background:var(--bg-2);padding:28px;margin-bottom:6px}
+  .phone{width:100%;max-width:280px;margin:0 auto;border-radius:40px;padding:11px;
+         background:linear-gradient(160deg,#48484a,#1c1c1e);border:1px solid #48484a;
+         box-shadow:0 30px 60px -28px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.18)}
+  .phone-screen{position:relative;background:#000;border-radius:30px;overflow:hidden;padding:28px 14px 16px}
+  .phone-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:84px;height:20px;
+               background:#000;border-radius:0 0 12px 12px;z-index:2}
+  .app-title{color:#fff;font-size:23px;font-weight:700;letter-spacing:-.02em}
+  .app-sub{color:#8e8e93;font-size:11px;margin-top:2px}
+  .app-section{color:#8e8e93;font-size:10px;font-weight:700;letter-spacing:.05em;
+               margin:16px 0 6px;padding:0 2px}
+  .app-card{background:#1c1c1e;border-radius:13px;overflow:hidden}
+  .app-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+           min-height:40px;padding:8px 13px}
+  .app-label{color:#fff;font-size:12px;flex:none}
+  .app-value{color:#8e8e93;font-size:12px;text-align:right;overflow:hidden;
+             text-overflow:ellipsis;white-space:nowrap}
+  .app-value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#e5e5e7;letter-spacing:.02em}
+  .app-divider{height:1px;background:#38383a;margin-left:13px}
+  .app-value.with-dot{display:inline-flex;align-items:center;gap:6px}
+  .app-dot{width:8px;height:8px;border-radius:50%;background:#8e8e93;flex:none}
+  .app-dot.green{background:#30d158;box-shadow:0 0 8px rgba(48,209,88,.7)}
+  .app-switch{width:40px;height:24px;border-radius:99px;background:#30d158;position:relative;flex:none}
+  .app-switch .knob{position:absolute;top:2px;left:18px;width:20px;height:20px;border-radius:50%;
+                    background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+  .app-log{background:#1c1c1e;border:1px solid #38383a;border-radius:13px;padding:10px 12px;
+           height:134px;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+           font-size:9.5px;line-height:1.8;color:#7ee787;white-space:nowrap}
+  .app-log .t{color:#5b8a5f}
+  .preview-info h3{margin:2px 0 8px;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .preview-info p{margin:0 0 15px;font-size:12.8px;color:var(--text-2);line-height:1.65}
+  ul.pfeat{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  ul.pfeat li{display:flex;gap:10px;align-items:flex-start;font-size:12.8px;color:var(--text-2);line-height:1.55}
+  ul.pfeat li .ic{width:15px;height:15px;margin-top:2px;color:var(--green);flex:none}
+  ul.pfeat li b{color:var(--text);font-weight:600}
+
+  @media(max-width:820px){ .preview{grid-template-columns:1fr;gap:26px;padding:22px 18px} }
+  @media(max-width:560px){ .dl{padding:18px} .dl-act{min-width:100%} .phone{max-width:250px} }
 {% endblock %}
 
 {% block content %}
@@ -100,6 +139,59 @@
   </div>
 </div>
 {% endif %}
+
+<h2 class="sec"><svg class="ic"><use href="#i-smartphone"/></svg>หน้าตาแอป</h2>
+<div class="preview">
+  <div class="phone" role="img" aria-label="ตัวอย่างหน้าจอแอป Rejoin Agent">
+    <div class="phone-screen">
+      <div class="phone-notch"></div>
+      <div class="app-title">Auto-Rejoin</div>
+      <div class="app-sub">เฝ้าเกมและรีเข้าใหม่อัตโนมัติ</div>
+
+      <div class="app-section">การตั้งค่าเครื่อง</div>
+      <div class="app-card">
+        <div class="app-row"><span class="app-label">รหัสเครื่อง</span><span class="app-value mono">RJ-8F3K2-9XQ7M</span></div>
+        <div class="app-divider"></div>
+        <div class="app-row"><span class="app-label">เซิร์ฟเวอร์</span><span class="app-value">rejoin.example.com</span></div>
+        <div class="app-divider"></div>
+        <div class="app-row"><span class="app-label">Place ID</span><span class="app-value mono">107778070777162</span></div>
+      </div>
+
+      <div class="app-section">สถานะ</div>
+      <div class="app-card">
+        <div class="app-row">
+          <span class="app-label">การทำงาน</span>
+          <span class="app-value with-dot"><span class="app-dot green"></span>กำลังเฝ้า…</span>
+        </div>
+        <div class="app-divider"></div>
+        <div class="app-row">
+          <span class="app-label">เฝ้าเกม</span>
+          <span class="app-switch"><span class="knob"></span></span>
+        </div>
+      </div>
+
+      <div class="app-section">บันทึกการทำงาน</div>
+      <div class="app-log">
+        <div><span class="t">12:04:01</span> เชื่อมต่อเซิร์ฟเวอร์แล้ว</div>
+        <div><span class="t">12:04:02</span> ลงทะเบียนเครื่องสำเร็จ</div>
+        <div><span class="t">12:04:05</span> ติดตั้งสคริปต์ Lua แล้ว</div>
+        <div><span class="t">12:04:08</span> ตรวจพบเกมกำลังทำงาน</div>
+        <div><span class="t">12:04:09</span> armed — เริ่มเฝ้าเกม</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-info">
+    <h3>ตั้งค่าครั้งเดียว แล้วปล่อยให้แอปเฝ้าให้</h3>
+    <p>หน้าจอเดียวจบ กรอกรหัสเครื่องที่ได้จากเว็บ เปิดสวิตช์ "เฝ้าเกม" แล้ววางเครื่องไว้ได้เลย</p>
+    <ul class="pfeat">
+      <li><svg class="ic"><use href="#i-check"/></svg><span><b>กรอกครั้งเดียว</b> — รหัสเครื่อง เซิร์ฟเวอร์ และ Place ID จะถูกจำไว้</span></li>
+      <li><svg class="ic"><use href="#i-check"/></svg><span><b>ติดตั้ง Lua ให้เอง</b> — ดึงสคริปต์จากเว็บแล้ววางลง Delta อัตโนมัติ</span></li>
+      <li><svg class="ic"><use href="#i-check"/></svg><span><b>ทำงานเบื้องหลัง</b> — เป็น Foreground Service ไม่ถูกระบบฆ่า</span></li>
+      <li><svg class="ic"><use href="#i-check"/></svg><span><b>เห็นทุกอย่างในจอเดียว</b> — สถานะสี + บันทึกการทำงานแบบสด</span></li>
+    </ul>
+  </div>
+</div>
 
 <h2 class="sec"><svg class="ic"><use href="#i-list"/></svg>วิธีติดตั้ง</h2>
 <div class="steps">
