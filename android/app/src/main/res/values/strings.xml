@@ -5,6 +5,7 @@
 
     <string name="section_device">การตั้งค่าเครื่อง</string>
     <string name="section_status">สถานะ</string>
+    <string name="label_work">การทำงาน</string>
     <string name="section_log">บันทึกการทำงาน</string>
 
     <string name="label_code">รหัสเครื่อง</string>

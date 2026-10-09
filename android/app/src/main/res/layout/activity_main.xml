@@ -125,7 +125,7 @@
                 <TextView
                     style="@style/RowLabel"
                     android:layout_weight="1"
-                    android:text="@string/section_status" />
+                    android:text="@string/label_work" />
 
                 <TextView
                     android:id="@+id/txtStatus"
