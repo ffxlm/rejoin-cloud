@@ -17,7 +17,7 @@
 
 ## สิ่งที่ต้องมี
 1. **VPS** (Ubuntu 22.04/24.04, RAM ≥ 1GB) — เช่น DigitalOcean / Vultr / Hetzner / AWS Lightsail
-2. **โดเมน** 1 อัน (เช่น `rejoin.example.com`) → ตั้ง **A record** ชี้ไป IP ของ VPS
+2. **โดเมน** 1 อัน (เช่น `rejoin.thirx.com`) → ตั้ง **A record** ชี้ไป IP ของ VPS
 3. เปิดพอร์ต **80** และ **443** บน firewall ของ VPS
 4. (ตัวเลือก) **Discord OAuth app** — https://discord.com/developers/applications
 
@@ -44,11 +44,11 @@ cp deploy/.env.example deploy/.env
 nano deploy/.env
 ```
 แก้:
-- `DOMAIN=rejoin.example.com`
+- `DOMAIN=rejoin.thirx.com`
 - `POSTGRES_PASSWORD=<สุ่มยาวๆ>`
 - `SESSION_SECRET=<openssl rand -hex 32>`
 - `DISCORD_CLIENT_ID/SECRET` (ถ้าใช้ Discord login)
-- `DISCORD_REDIRECT_URI=https://rejoin.example.com/auth/discord/callback`
+- `DISCORD_REDIRECT_URI=https://rejoin.thirx.com/auth/discord/callback`
 
 ### 4) รัน
 ```bash
@@ -59,13 +59,13 @@ Caddy จะขอ certificate ให้เองอัตโนมัติ (�
 
 ### 5) ตรวจว่าใช้ได้
 ```bash
-curl https://rejoin.example.com/health
+curl https://rejoin.thirx.com/health
 # → {"ok":true,"redis":true,"db":"postgresql+asyncpg"}
 ```
-เปิดเบราว์เซอร์: `https://rejoin.example.com/` → ล็อกอิน → เพิ่มเครื่อง → ได้รหัส
+เปิดเบราว์เซอร์: `https://rejoin.thirx.com/` → ล็อกอิน → เพิ่มเครื่อง → ได้รหัส
 
 ### 6) ตั้งค่า APK ให้ชี้โดเมนนี้
-ในแอป Rejoin Agent → ช่อง "เซิร์ฟเวอร์" ใส่ `https://rejoin.example.com`
+ในแอป Rejoin Agent → ช่อง "เซิร์ฟเวอร์" ใส่ `https://rejoin.thirx.com`
 (ค่า default ในโค้ดควรแก้เป็นโดเมนคุณใน `Prefs.DEFAULT_SERVER`)
 
 จากนี้ **คลาวโฟนที่ไหนก็ใช้ได้** — ไม่ต้อง adb/ไม่ต้อง LAN
@@ -75,7 +75,7 @@ curl https://rejoin.example.com/health
 ## Discord OAuth (ล็อกอินจริง)
 1. https://discord.com/developers/applications → New Application
 2. แท็บ **OAuth2** → คัดลอก **Client ID** + **Client Secret** ใส่ `deploy/.env`
-3. เพิ่ม **Redirect URI**: `https://rejoin.example.com/auth/discord/callback`
+3. เพิ่ม **Redirect URI**: `https://rejoin.thirx.com/auth/discord/callback`
 4. หลัง deploy → หน้า login จะมีปุ่ม "เข้าสู่ระบบด้วย Discord"
 
 ---

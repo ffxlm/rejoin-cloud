@@ -14,7 +14,7 @@
     <string name="label_watch">เฝ้าเกม</string>
 
     <string name="hint_code">RJ-XXXXX-XXXXX</string>
-    <string name="hint_server">http://…</string>
+    <string name="hint_server">https://rejoin.thirx.com</string>
     <string name="hint_place">เช่น 107778070777162</string>
 
     <string name="btn_start">เริ่มเฝ้า (arm)</string>
